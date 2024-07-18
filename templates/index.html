@@ -1,1 +1,15 @@
-PÄÄSIVU c:
+{% if session.username %}
+    <p> Logged in with name {{ session.username }} </p>
+    <a href="/logout"> Log out </a>
+{% else %}
+    <p> Login: </p>
+    <form action="/login" method="POST">
+        <p> username: <br>
+            <input type="text", name="username"> </p>
+        <p> password: <br>
+            <input type="password" name="password"></p>
+        <input type="submit" value="log in">
+    </form>
+    <p> Create an account:</p>
+    <a href="/register"> new account</a>
+{% endif %}
