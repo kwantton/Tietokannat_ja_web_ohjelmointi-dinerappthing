@@ -10,10 +10,15 @@ app.config["SQLALCHEMY_DATABASE_URI"] = getenv('DATABASE_URL')
 db = SQLAlchemy(app)
 app.secret_key = getenv("SECRET_KEY")
 admin_password = getenv("ADMIN_PASSWORD")
+API_key = getenv("GOOGLE_API_KEY")
 
 @app.route("/")
 def index():
     return render_template('index.html')
+
+@app.route('/map')
+def map():
+    return render_template('map.html', key=API_key)
 
 @app.route("/login", methods=["POST"])
 def login():
