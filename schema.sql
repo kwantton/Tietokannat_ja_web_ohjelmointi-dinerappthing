@@ -2,10 +2,9 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY, 
     username TEXT UNIQUE NOT NULL, 
     password TEXT NOT NULL,
-    is_admin BOOLEAN
+    is_admin BOOLEAN,
+    email TEXT NOT NULL
 );
-
-INSERT INTO users (username, password, is_admin) VALUES ('admin','#REPLACETHIS!!!', TRUE);
 
 CREATE TABLE restaurants (
     id SERIAL PRIMARY KEY, 
