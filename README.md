@@ -36,7 +36,19 @@ See schema.sql
 - for example, to set the SECRET_KEY, in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key
 - set DATABASE_URL=postgresql:///\[your_user_here\]
 - ADMIN_PASSWORD should be set raw; in English, do not use hashing for the actual password string; instead type the ADMIN_PASSWORD as-is
-GOOGLE_API_KEY: I'm using google api for the map services (why? It's the first thing I found when searching for "map API"). For that, you'll need a 39-character (in my case) API Key from Google Cloud. With that set as the GOOGLE_API_KEY environment variable, you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand! c:
+GOOGLE_API_KEY: I'm using google api for the map services. For that, you'll need 
+- a 39-character (in my case) API Key from Google Cloud. With that set as the GOOGLE_API_KEY environment variable, AND 
+- when you enable 
+    - Geocoder and 
+    - Maps JavaScript API in your Google Cloud settings, 
+you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand anything :p
+
+### Google Maps API
+First, see the GOOGLE_API_KEY above.
+Here are some manuals regarding how I set up the thing:
+- https://developers.google.com/maps/documentation/javascript/adding-a-google-map#maps_add_map-html adding a Google Map
+- https://developers.google.com/maps/documentation/javascript/examples/infowindow-simple infowindow; when clicking on a custom-made marker, how to show an info window
+
 
 ### requirements.txt contents (i.e., dependencies)
 - after git cloning onto your computer, run 'pip install requirement.txt' to install all the dependencies
