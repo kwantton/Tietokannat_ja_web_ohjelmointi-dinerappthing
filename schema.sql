@@ -16,6 +16,11 @@ INSERT INTO restaurants (restaurant_name, address) VALUES ('Krung Thep Thai Bist
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Egyptiläinen ravintola El Karim', 'Koskelantie 52, 00610 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Käpygrilli', 'Osmontie 5, 00610 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Hesburger Käpylä Drive-In', 'Vähänkyröntie 2, 00610 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Nyyrikki', 'Pohjolankatu 2, 00610 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Iso Paja', 'Radiokatu 3, 00240 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Burger King', 'Vähänkyröntie 2, 00610 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki');
 
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY, 

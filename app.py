@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask import redirect, render_template, request, session
 from sqlalchemy import text                             # needed in new versions of SQLAlchemy, including the version I have (source: https://hy-tsoha.github.io/materiaali/osa-2/)
 from flask_sqlalchemy import SQLAlchemy
@@ -16,14 +16,18 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
-@app.route('/restaurants')
-def restaurants():
+@app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
+def get_restaurants_json():
     sql = text('SELECT * FROM restaurants')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
-    return render_template('map.html', key=API_key, restaurants=restaurants)    # actual google maps API in use here
-    return render_template('restaurants.html', restaurants=restaurants)         # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
-    
+    restaurants_list = [{'id': row[0], 'name': row[1], 'address': row[2]} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
+    return jsonify(restaurants_list)
+
+@app.route('/restaurants')
+def restaurants():
+    return render_template('map.html', key=API_key)    # actual google maps API in use here
+    # return render_template('restaurants.html', restaurants=restaurants)         # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
 
 @app.route("/login", methods=["POST"])
 def login():
