@@ -1,4 +1,4 @@
-<form action="/register" method="POST">
+<form action="/register" method="POST" onsubmit="return check(this)">
     <p> username
         <input type="text" name="username" > </p>
     <p> password
@@ -9,3 +9,27 @@
         <input type="email" name="email"> </p>
     <button>register</button>
 </form>
+
+<script>
+    const check = form => {
+        if (form.username.value.length < 3) {
+            alert("Username should be at least 3 characters ");
+            return false;   // without this, it will submit the form. Even in that case, there's a separate error page with a similar message c:
+        } else if (form.password1.value === '' || form.password2.value === '') {
+            alert("Please provide password twice");
+            return false;
+        } else if (form.password1.value !== form.password2.value) {
+            console.log("form.password1.value:", form.password1.value, "form.password2.value:", form.password2.value);
+            alert("Passwords do not match");
+            return false;   // would submit the form without this
+        } else if (form.password1.value.length < 4) {
+            alert("Password length has to be at least 4");
+            return false;
+        } else if (form.email.value == '') {    // without this, it would pass if left empty! the 'type=email' only checks for the form of input, not if the field is empty!
+            alert("Please provide an email");
+            return false;
+        } else {
+            return true;
+        }
+    }
+</script>

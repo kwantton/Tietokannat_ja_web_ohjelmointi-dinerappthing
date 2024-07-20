@@ -3,7 +3,7 @@ CREATE TABLE users (
     username TEXT UNIQUE NOT NULL, 
     password TEXT NOT NULL,
     is_admin BOOLEAN,
-    email TEXT NOT NULL
+    email TEXT UNIQUE NOT NULL
 );
 
 CREATE TABLE restaurants (
