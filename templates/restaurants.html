@@ -1,0 +1,28 @@
+<!-- NOTE: width and height % of the screen -->
+
+<p> Google Maps map for reference: </p>
+<div class="container">
+    <div>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d7929.33283613179!2d24.958641485073244!3d60.20831718310385!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sRavintolat!5e0!3m2!1sfi!2sfi!4v1721425015201!5m2!1sfi!2sfi" 
+            width=60%
+            height=60%
+            style="border:0;" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+</div>
+
+<!-- a list of every restaurant, with togglable map for each -->
+
+<ul>
+{% for restaurant in restaurants %}
+    <li>
+        {{ restaurant.restaurant_name }}
+        <br>
+        {{ restaurant.address }}
+        <button> show on map </button>
+    </li>
+{% endfor %}
+</ul>

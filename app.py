@@ -16,9 +16,13 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
-@app.route('/map')
-def map():
-    return render_template('map.html', key=API_key)
+@app.route('/restaurants')
+def restaurants():
+    sql = text('SELECT * FROM restaurants')
+    result = db.session.execute(sql)
+    restaurants = result.fetchall()
+    return render_template('restaurants.html', restaurants=restaurants)    # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
+    return render_template('map.html', key=API_key)     # more elaborate stuff possible
 
 @app.route("/login", methods=["POST"])
 def login():
