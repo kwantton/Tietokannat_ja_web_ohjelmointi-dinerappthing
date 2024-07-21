@@ -1,18 +1,27 @@
 # diner app (ravintolasovellus) "dinerappthing"
+## description
+A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews (WIP) by other users and give their own review (WIP).
+A selection of restaurants (and a couple of cafes) is initialized as a PostgreSQL database, from which markers are placed
+on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.
+Restaurants can be grouped by the admin according to some properties (WIP). The admin can delete reviews (WIP) by rendering them invisible to others (we don't want to permanently delete the evidence c;).
+The user can search for restaurants based on description (WIP).
+
+their own reviews, including a comment and a rating/5.
 ## TO-DO:
-- map of restaurants with info and opening hours
-- ratings /5, comments, from different users
-- when admin is logged in, they can do... admin stuff
-- restaurant serch (textbox search based on name, description)
+- add info, opening hours and sql-database-based ratings /5 to each location on the map
+- make it possible to add comments by users
+- admin can delete comments and ratings given by users (when they are clearly spam etc.)
+- restaurant search (textbox search based on name or description)
+- admin can create groups for restaurants based on properties, like "thai", "cafe", etc.
 - rating list; top restaurants
-- admin can delete comments
-- groups for restaurants based on some (?) properties
+- a user can search restaurants from the SQL database based on words of the desription / name
+
 
 ## SQL tables
 See schema.sql
 - users         id      username (uniq.)    password            email               
 - restaurants   id      restaurant_name     street address
-- ratings       id      restaurant_id       user_id             rating (0...5)
+- ratings       id      restaurant_id       user_id             rating (0...5)      # many of these -> average
 - comments      id      user_id             restaurant_id       comment
 
 ## WIP: premature manual (planning)
@@ -47,6 +56,7 @@ First, see the GOOGLE_API_KEY above.
 Here are some manuals regarding how I set up the thing:
 - https://developers.google.com/maps/documentation/javascript/adding-a-google-map#maps_add_map-html adding a Google Map
 - https://developers.google.com/maps/documentation/javascript/examples/infowindow-simple infowindow; when clicking on a custom-made marker, how to show an info window
+- https://developers.google.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerElement AdvancedMarkerElement; i.e. the markers you see on the map.
 - https://developers.google.com/maps/documentation/javascript/places#find_place_from_query Places Library; searching based on query, in my case, at least. You can also do much more with this.
 
 
