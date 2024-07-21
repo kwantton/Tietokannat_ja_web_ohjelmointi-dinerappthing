@@ -23,17 +23,26 @@ INSERT INTO restaurants (restaurant_name, address) VALUES ('Burger King', 'Väh�
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Sotto Pizza & Bar Käpylä', 'Mäkelänkatu 87 00610 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Old Sophie', 'Koskelantie 9 00610 Helsinki');
-
-CREATE TABLE ratings (
-    id SERIAL PRIMARY KEY, 
-    user_id INTEGER REFERENCES users,
-    restaurant_id INTEGER REFERENCES restaurants,
-    rating INTEGER
-);
+INSERT INTO restaurants (restaurant_name, address) VALUES ('CoolHead Brew / CoolHead Taproom', 'Gardenia Päärakennus Koetilantie 1 00790 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Harju 8', 'Harjutori 8 00500 Helsinki Finland');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Platinum Lounge', 'Areenankuja 1 00240 Helsinki Finland');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Kahvila Aurinko', 'Jyrängöntie 2 00560 Helsinki Finland');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Frangipani Bakery & Café', 'Intiankatu 25 00560 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Beer restaurant Oljenkorsi / Olutravintola Oljenkorsi', 'Intiankatu 18 00560 Helsinki');
 
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY, 
     user_id INTEGER REFERENCES users,
     restaurant_id INTEGER REFERENCES restaurants,
-    comment TEXT
+    comment TEXT,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE ratings (
+    id SERIAL PRIMARY KEY, 
+    user_id INTEGER REFERENCES users,
+    restaurant_id INTEGER REFERENCES restaurants,
+    comment_id INTEGER REFERENCES comments,
+    rating INTEGER,
+    created_at TIMESTAMP
 );

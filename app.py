@@ -26,7 +26,10 @@ def get_restaurants_json():
 
 @app.route('/restaurants')
 def restaurants():
-    return render_template('map.html', key=API_key)    # actual google maps API in use here
+    sql = text('SELECT * FROM restaurants')
+    result = db.session.execute(sql)
+    restaurants = result.fetchall()
+    return render_template('map.html', key=API_key, restaurants=restaurants)    # actual google maps API in use here
     # return render_template('restaurants.html', restaurants=restaurants)         # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
 
 @app.route("/login", methods=["POST"])

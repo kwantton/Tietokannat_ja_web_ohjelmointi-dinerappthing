@@ -40,8 +40,8 @@ async function initMap() {
 
         const detailRequest = {
           placeId: place.place_id,
-          fields: ['name', 'geometry', 'opening_hours', 'utc_offset_minutes'] // NB! The .isOpen() below needs the 'utc_offset_minutes' here! It won't work otherwise!
-        }
+          fields: ['name', 'geometry', 'opening_hours', 'utc_offset_minutes', 'types'] // NB! The .isOpen() below needs the 'utc_offset_minutes' here! It won't work otherwise!
+        } // 'types' = "An array of types for this place (e.g., ["political", "locality"] or ["restaurant", "lodging"]). This array may contain multiple values, or may be empty. New values may be introduced without prior notice. See the list of supported types." (https://developers.google.com/maps/documentation/javascript/places)
 
         service.getDetails(detailRequest, (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
@@ -52,14 +52,13 @@ async function initMap() {
               position: placeDetails.geometry.location,
               title: placeDetails.name,
             });
-            const openingHours = placeDetails.opening_hours?.weekday_text || []; // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get a list [] in all cases. The ?. returns undefined if the property before .? is undefined AND cuts the chain there, not even trying to define the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
-            let openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each `<li>...</li>` for each day as a string as-is; this list of <li></li>'s is placed inside an <ul> to create a list of opening hours per each weekday for each restaurant c:
-            const openNow = placeDetails.opening_hours?.isOpen();   // NB! The .isOpen() needs the 'utc_offset_minutes' that was given above! isOpen() won't work otherwise!
-            // console.log("openNow:", openNow);
-            // console.log("placeDetails.opening_hours:", placeDetails.opening_hours);
-            // const openNowHTML = `<p><b>${openNow}</b></p>`
+            const openingHours = placeDetails.opening_hours?.weekday_text || []; // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
+            let openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
+            const openNow = placeDetails.opening_hours?.isOpen();   // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work otherwise!
+            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // let's filter out those descriptions that say 'point_of_interest' (every goddamn place), or 'establishment' (every goddamn place..)
+            let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('')
             let openNowMsg = ''
-            openNow ? openNowMsg = `<p style=position:relative;color:green;>OPEN</p>` : openNowMsg = `<p style=color:red;position:relative>CLOSED</p>` // if openNow === True, then add the info to openingHoursHTML. Otherwise do nothing, 'do nothing' just returns the string 'do nothing' here, which does absolutely nothing
+            openNow ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>' : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>' // if openNow === True, the return html saying OPEN with green text. Otherwise CLOSED with red text. Awesum.
             
             const contentString =
             ` 
@@ -71,6 +70,8 @@ async function initMap() {
                   <p><b>${location.address}</b></p>
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
+                  <h2>descriptive terms</h2>
+                  <ul>${descriptionsHTML}
                 </div> 
             </div>
             `;

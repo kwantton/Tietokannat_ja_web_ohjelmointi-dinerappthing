@@ -2,16 +2,29 @@
   <head>
     <title>Add Map</title>
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed to get the url that Flask is handling-->
     <script type="module" >
         const apiKey='{{ key }}'
     </script>
-    <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script> <!-- index.js has the actual logic for map location settings -->
+    <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            <!-- index.js has the actual logic for map -->
   </head>
   <body>
     <h3>Restaurant map </h3>
     <!--The div element for the map -->
-    <div id="map"></div>
+    <div id="map"></div>                <!-- height 100% etc, see style.css -->
+
+    <div>
+        <ul>
+            {% for restaurant in restaurants %}
+                <li>
+                    {{ restaurant.restaurant_name }}
+                    <br>
+                    {{ restaurant.address }}
+                    <button> show on map </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 
     <!-- prettier-ignore -->
     <script>(g=>{
