@@ -31,8 +31,8 @@ async function initMap() {
   for (const location of json_of_locations) {       // for each location in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
     const request = {
       query: `${location.name} ${location.address}`,  // Template strings of JS. I'm querying based on both the name and the location, of course. It's the only sensible minimum requirement to get the exact location of the exact diner that I'm 'looking for' based on the search. This ` ${name} ${address}` just means; name + " " + address, in case you're not familiar with JS. It's called 'template strings' in JS.
-      fields: ['name', 'geometry', 'place_id']        // place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map.
-    }
+      fields: ['name', 'geometry', 'place_id', 'icon', 'icon_background_color']        // place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map.
+    } // 'icon' is for getting image url (for getting png picture)
 
     service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) { // if status is OK AND results exist (i.e., not null or undefined or whatever, which also would be interpreted as FALSE)
@@ -40,17 +40,30 @@ async function initMap() {
 
         const detailRequest = {
           placeId: place.place_id,
-          fields: ['name', 'geometry', 'opening_hours', 'utc_offset_minutes', 'types'] // NB! The .isOpen() below needs the 'utc_offset_minutes' here! It won't work otherwise!
-        } // 'types' = "An array of types for this place (e.g., ["political", "locality"] or ["restaurant", "lodging"]). This array may contain multiple values, or may be empty. New values may be introduced without prior notice. See the list of supported types." (https://developers.google.com/maps/documentation/javascript/places)
+          fields: ['name', 'geometry', 'opening_hours', 'utc_offset_minutes', // NB! The .isOpen() below needs 'utc_offset_minutes' here! In English: checking if a given establishment is open at current time works only when 'utc_offset_minutes' is listed here
+            'types'] 
+        } // 'types' = "An array of types for this place (e.g., ["restaurant", "lodging"]). This array may contain multiple values, or may be empty. New values may be introduced without prior notice. See the list of supported types." (https://developers.google.com/maps/documentation/javascript/places)
 
         service.getDetails(detailRequest, (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+            
+            // console.log("place.icon:", place.icon)                       // the URL for the icon png, used below
+            console.log("place")
+            const markerElement = document.createElement('div');            // this is normal JS, creating a new element
+            markerElement.className = 'custom-marker';
+            markerElement.style.backgroundColor = '#FFBF00';
+            markerElement.style.backgroundImage = `url(${place.icon})`;
+            markerElement.style.backgroundSize = 'contain';
+            markerElement.style.width = '26px';
+            markerElement.style.height = '26px';
+            
             
             // setting markers; choose the map 'map', position, and set the title that will be shown when you hover over the marker
             const diner_marker = new AdvancedMarkerElement({
               map: map,
               position: placeDetails.geometry.location,
               title: placeDetails.name,
+              content: markerElement
             });
             const openingHours = placeDetails.opening_hours?.weekday_text || []; // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
             let openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
