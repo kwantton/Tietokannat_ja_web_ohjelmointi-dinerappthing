@@ -9,7 +9,7 @@ CREATE TABLE users (
 CREATE TABLE restaurants (
     id SERIAL PRIMARY KEY, 
     restaurant_name TEXT,
-    address TEXT UNIQUE
+    address TEXT
 );
 
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Krung Thep Thai Bistro Arabia', 'Hämeentie 153, 00560 Helsinki');
@@ -21,6 +21,8 @@ INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Nyyrikki',
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Iso Paja', 'Radiokatu 3, 00240 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Burger King', 'Vähänkyröntie 2, 00610 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Sotto Pizza & Bar Käpylä', 'Mäkelänkatu 87 00610 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Old Sophie', 'Koskelantie 9 00610 Helsinki');
 
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY, 

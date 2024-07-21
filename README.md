@@ -1,9 +1,8 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## TO-DO:
-- user login, new account creation
 - map of restaurants with info and opening hours
 - ratings /5, comments, from different users
-- admin
+- when admin is logged in, they can do... admin stuff
 - restaurant serch (textbox search based on name, description)
 - rating list; top restaurants
 - admin can delete comments
@@ -48,6 +47,7 @@ First, see the GOOGLE_API_KEY above.
 Here are some manuals regarding how I set up the thing:
 - https://developers.google.com/maps/documentation/javascript/adding-a-google-map#maps_add_map-html adding a Google Map
 - https://developers.google.com/maps/documentation/javascript/examples/infowindow-simple infowindow; when clicking on a custom-made marker, how to show an info window
+- https://developers.google.com/maps/documentation/javascript/places#find_place_from_query Places Library; searching based on query, in my case, at least. You can also do much more with this.
 
 
 ### requirements.txt contents (i.e., dependencies)
