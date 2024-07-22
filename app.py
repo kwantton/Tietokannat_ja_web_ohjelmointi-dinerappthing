@@ -16,6 +16,40 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
+@app.route('/api/ratings/<int:restaurant_id>')
+def get_ratings_and_comments_by_restaurant_id(restaurant_id):                        # don't forget the 'restaurant_id' as the parameter...
+    sql = text('SELECT * FROM restaurants LEFT JOIN ratings ON restaurants.id = ratings.restaurant_id LEFT JOIN comments ON restaurants.id = comments.restaurant_id WHERE restaurants.id = :restaurant_id')
+    result = db.session.execute(sql, {'restaurant_id':restaurant_id})
+    ratings = result.fetchall()
+    rating_list = [{'restaurant_id': row[0], 'restaurant_name': row[1], 'address': row[2], 'user_id':row[4], 'comment_id':row[9], 'created_at':row[6], 'rating':row[7], 'created_at':row[8], 'comment':row[12]} for row in ratings]
+    print("rating_list:", rating_list)
+    return jsonify(rating_list)
+
+@app.route('/api/ratings')
+def get_ratings():
+    sql = text('SELECT * FROM ratings')
+    result = db.session.execute(sql)
+    ratings = result.fetchall()
+    rating_list = [{'id': row[0], 'user_id': row[1], 'restaurant_id': row[2], 'comment_id':row[3], 'rating':row[4], 'created_at':row[5]} for row in ratings]
+    return jsonify(rating_list)
+
+@app.route('/api/comments')
+def get_comments():
+    sql = text('SELECT * FROM comments')
+    result = db.session.execute(sql)
+    comments = result.fetchall()
+    comment_list = [{'id': row[0], 'user_id': row[1], 'restaurant_id': row[2], 'comment':row[3], 'created_at':row[4]} for row in comments]
+    return jsonify(comment_list)
+
+@app.route("/api/sessionuser")  # for providing session.user to 'index.js'
+def get_sessionuser():
+    try:
+        session_user = session["user"]
+    except:
+        session_user = ''
+    print("session_user:", session_user)
+    return jsonify({'user':session_user})
+
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
     sql = text('SELECT * FROM restaurants')
@@ -37,9 +71,6 @@ def login():
     username = request.form['username']
     password = str(request.form['password']) # if the input password is just numbers...?
 
-    print("login username:", username)
-    print("login password:", password)
-    
     sql = text('SELECT username, password FROM users WHERE username=:username') # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
     result = db.session.execute(sql, {"username":username, "password":password})  # HASHED pw into db
     
@@ -51,11 +82,7 @@ def login():
             return render_template("error.html", message="username or password is wrong")
     else:
         try:
-            print("result:", result)
             user = result.fetchone()        # the row has two values: u_name and p_word.
-            print("user:", user)
-            print("real_username:", user.username)
-            print("hashed_password:", user.password)
             if check_password_hash(user.password, password):
                 session["username"] = username
                 return redirect("/")
