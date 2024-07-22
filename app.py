@@ -16,12 +16,18 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
-@app.route('/api/ratings/<int:restaurant_id>')
-def get_ratings_and_comments_by_restaurant_id(restaurant_id):                        # don't forget the 'restaurant_id' as the parameter...
-    sql = text('SELECT * FROM restaurants LEFT JOIN ratings ON restaurants.id = ratings.restaurant_id LEFT JOIN comments ON restaurants.id = comments.restaurant_id WHERE restaurants.id = :restaurant_id')
+# This provides both the ratings AND the comments per each 'restaurant_id'
+@app.route('/api/ratings/<int:restaurant_id>')      
+def get_ratings_and_comments_by_restaurant_id(restaurant_id):
+    sql = text('''SELECT * FROM 
+               restaurants LEFT JOIN ratings ON 
+               restaurants.id = ratings.restaurant_id 
+               LEFT JOIN comments ON 
+               restaurants.id = comments.restaurant_id 
+               WHERE restaurants.id = :restaurant_id''')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings = result.fetchall()
-    rating_list = [{'restaurant_id': row[0], 'restaurant_name': row[1], 'address': row[2], 'user_id':row[4], 'comment_id':row[9], 'created_at':row[6], 'rating':row[7], 'created_at':row[8], 'comment':row[12]} for row in ratings]
+    rating_list = [{'restaurant_id': row[0], 'restaurant_name': row[1], 'address': row[2], 'user_id':row[4], 'comment_id':row[9], 'created_at':row[13], 'rating':row[7], 'comment':row[12]} for row in ratings]
     print("rating_list:", rating_list)
     return jsonify(rating_list)
 

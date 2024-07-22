@@ -1,6 +1,6 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY, 
-    username TEXT UNIQUE NOT NULL, 
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     is_admin BOOLEAN,
     email TEXT UNIQUE NOT NULL
@@ -66,3 +66,21 @@ CREATE TABLE ratings (
     rating INTEGER,
     created_at TIMESTAMP
 );
+
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 1, 1, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 2, 2, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 3, 3, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 4, 5, 5, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 5, 6, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 6, 7, 5, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 7, 8, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 8, 9, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 9, 10, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 10, 10, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 11, 11, 5, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 12, 12, 5, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 13, 13, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 14, 14, 3, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 15, 15, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 16, 16, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 17, 17, 5, NOW());

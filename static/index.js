@@ -62,7 +62,7 @@ async function initMap(apiServices) {
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
             
-            // console.log("place.icon:", place.icon)                       // the URL for the icon png, used below
+            // creating the markerElement and making it pretty (more in 'style.css')
             const markerElement = document.createElement('div');            // this is normal JS, creating a new element
             markerElement.className = 'custom-marker';
             markerElement.style.backgroundColor = '#FCD12A';
@@ -70,6 +70,7 @@ async function initMap(apiServices) {
             markerElement.style.backgroundSize = 'contain';
             markerElement.style.width = '26px';
             markerElement.style.height = '26px';
+            // console.log("place.icon:", place.icon)                       // the URL for the icon png, used below
             
             // setting markers; choose the map 'map', position, and set the title that will be shown when you hover over the marker
             const diner_marker = new AdvancedMarkerElement({
@@ -90,11 +91,13 @@ async function initMap(apiServices) {
             const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // let's filter out those descriptions that say 'point_of_interest' (every goddamn place), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
-            // I need: (1) API for comments per restaurant, (2) API for ratings per restaurant
+            // I need the API for comments and ratings per restaurant-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
             const restaurant_id = location.id // this is the SQL db restaurant_id! c:
-            // console.log({restaurant_id}) // ok
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurant_id}`)
-            console.log({ratings_for_restaurant})
+            console.log("ratings_for_restaurant:",ratings_for_restaurant) // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
+            const commentHTML = ratings_for_restaurant.map(item => `<li> ${item.comment}
+              <br>
+              ${item.rating}/5 </li>`).join('')
 
             const contentString =
             ` 
@@ -106,8 +109,10 @@ async function initMap(apiServices) {
                   <p><b>${location.address}</b></p>
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
-                  <h2>descriptive terms</h2>
-                  <ul>${descriptionsHTML}
+                  <h2>culinary services</h2>
+                  <ul>${descriptionsHTML}</ul>
+                  <h2>comments</h2>
+                  <ul>${commentHTML}</ul>
                 </div> 
             </div>
             `;
