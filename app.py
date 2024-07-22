@@ -20,14 +20,17 @@ def index():
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
     sql = text('''SELECT * FROM 
-               restaurants LEFT JOIN ratings ON 
-               restaurants.id = ratings.restaurant_id 
-               LEFT JOIN comments ON 
-               restaurants.id = comments.restaurant_id 
-               WHERE restaurants.id = :restaurant_id''')
+               restaurants LEFT JOIN 
+               ratings ON 
+               restaurants.id = ratings.restaurant_id LEFT JOIN 
+               comments ON 
+               restaurants.id = comments.restaurant_id LEFT JOIN
+               users ON
+               comments.user_id = users.id WHERE
+               restaurants.id = :restaurant_id''')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings = result.fetchall()
-    rating_list = [{'restaurant_id': row[0], 'restaurant_name': row[1], 'address': row[2], 'user_id':row[4], 'comment_id':row[9], 'created_at':row[13], 'rating':row[7], 'comment':row[12]} for row in ratings]
+    rating_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row[1], 'address': row[2], 'username':row.username, 'user_id':row[4], 'comment_id':row[9], 'created_at':row[13], 'rating':row[7], 'comment':row[12]} for row in ratings]
     print("rating_list:", rating_list)
     return jsonify(rating_list)
 
