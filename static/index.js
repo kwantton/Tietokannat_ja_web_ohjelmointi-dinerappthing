@@ -18,12 +18,11 @@ async function initMap(apiServices, starRating) {
   // comments
   const comments = await apiServices.getAll('/api/comments')
   console.log("comments:", comments)
-  
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
   
-  // Request needed libraries.
+  // Request needed Google libraries. These are from the google Cloud instruction pages
   //@ts-ignore
   const { Map } = await google.maps.importLibrary("maps");
   const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
@@ -37,7 +36,7 @@ async function initMap(apiServices, starRating) {
     mapId: "DEMO_MAP_ID",
   });
 
-  const response = await fetch('/api/restaurants')  // this is kinda cool; the way to access the restaurants here in 'index.js'.
+  const response = await fetch('/api/restaurants')  // this is kinda cool; the way to access the (sql db) restaurants here in 'index.js'.
   const data = await response.json()                // since this is the standard way, I'm writing "data"
   const json_of_locations = data                    // just renaming for clarity c: this is the json with id:x, name:string, address:string that I made in app.py c:
   const service = new PlacesService(map)
@@ -57,7 +56,7 @@ async function initMap(apiServices, starRating) {
         const detailRequest = {
           placeId: place.place_id,
           fields: ['name', 'geometry', 'opening_hours', 'utc_offset_minutes', // NB! The .isOpen() below needs 'utc_offset_minutes' here! In English: checking if a given establishment is open at current time works only when 'utc_offset_minutes' is listed here
-            'types'] 
+            'types']
         } // 'types' = "An array of types for this place (e.g., ["restaurant", "lodging"]). This array may contain multiple values, or may be empty. New values may be introduced without prior notice. See the list of supported types." (https://developers.google.com/maps/documentation/javascript/places)
 
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
@@ -89,10 +88,11 @@ async function initMap(apiServices, starRating) {
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
               : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>';   // if not openNow, this row, with red text
 
-            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // let's filter out those descriptions that say 'point_of_interest' (every goddamn place), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
+            // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
+            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
-            // the API for comments and ratings per restaurant-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
+            // the API for comments and ratings per location-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
             const restaurant_id = location.id // this is the SQL db 'restaurant_id'
             
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
@@ -114,11 +114,11 @@ async function initMap(apiServices, starRating) {
             <div>
               <p>Feedback:</p>
               <textarea id='feedback-text' placeholder='feedback c:'></textarea>
-              <p>Rate:</p>
+              <p>Rate by clicking on the stars:</p>
               <div class="rating-posting-section-stars">
-                ${starRating(0)}
+                ${starRating(0) /** this is the star rating (1-5) to be clicked by the user. 'onclick's for each of these 'rating-posting-section-stars' will be set onClick of the infoWindow further below c: */}
               </div>
-              <button id='give-rating'>Submit</button>
+              <button id='send-rating'>Submit</button>
             </div>
             `
             const signInUltimatumHTML = `
@@ -126,9 +126,15 @@ async function initMap(apiServices, starRating) {
               <p>Want to share your experience? Sign in provide feedback!</p>
               <a href='/'> login </a>
             </div>
-              `;
+              `
+            const feedbackSentHTML = `
+            <div>
+              <p> Feedback sent! </p>
+              <a href='/'> home </a>
+            </div>
+              `
 
-            // THIS IS THE ACTUAL CONTENT OF THE INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
+            // THIS BELOW IS THE ACTUAL CONTENT OF THE INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
               const infoWindowContent =
             ` 
             <div id="content"> 
@@ -149,11 +155,13 @@ async function initMap(apiServices, starRating) {
                     <br> ${starRatingHTML}
                   </p>
                   <ul>${commentHTML}</ul>
-                  ${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, show the feedbackHTML, otherwise sell the idea to them like your life depends on it. This is known as great customer service or something?*/}
+                  <h2> feedback </h2>
+                  <div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, show the feedbackHTML, otherwise sell the idea to them like your life depends on it. This is known as great customer service or something?*/}</div>                  
+                  <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div> 
                 </div> 
             </div>
             `;
-            // btw, you have to use the `-marks here! It's only possible to use the ${variable} thing when using this in JavaScript c:
+            // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
             const infowindow = new google.maps.InfoWindow({
@@ -170,7 +178,7 @@ async function initMap(apiServices, starRating) {
               let rating = null;
 
               if (user !== '') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
-                setTimeout(() => {
+                setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                 
                   document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars)
                     star.addEventListener('click', (event) => {
@@ -190,32 +198,39 @@ async function initMap(apiServices, starRating) {
                     });
                   });
 
-                  document.querySelector('#give-rating').addEventListener('click', async event => {
+                  // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
+                  document.querySelector('#send-rating').addEventListener('click', async event => {
                     event.preventDefault() // we don't want to reload the whole page after sending the feedback
                     const comment = document.querySelector('#feedback-text').value;
-                    const restaurant_name = location.name
-                    const body = {
-                      restaurant_id,
-                      restaurant_name,
-                      comment}
-                    if(rating) {
-                      body.rating = rating  // if a rating exists (is not null), then include that in the body
+                    if (comment === '' || rating === null) {
+                      alert("please provide feedback text and a rating before submitting")
                     } else {
-                      //pass
-                    }
-                    
-                    const response = await fetch('/api/feedback/', {
-                      method:'POST',
-                      headers:{
-                        'Content-Type':'application/json'
-                      },
-                      body:JSON.stringify(body)
-                    })
-                    const data = await response.json()
-                    console.log({data})
-
+                      const restaurant_name = location.name
+                      const body = {
+                        restaurant_id,
+                        restaurant_name,
+                        comment}
+                      if(rating) {
+                        body.rating = rating  // if a rating exists (is not null), then include that in the body
+                      } else {
+                        //pass
+                      }
+                      document.querySelector('#feedback-section').style.display='none'
+                      document.querySelector('#feedback-sent').style.display='inline-block'
+                      document.querySelector('#feedback-text').value='' // reset the text field. It's hidden anyway, thus doesn't really matter 
+                      
+                      const response = await fetch('/api/feedback/', {
+                        method:'POST',
+                        headers:{
+                          'Content-Type':'application/json'
+                        },
+                        body:JSON.stringify(body)
+                      })
+                      const data = await response.json()
+                      console.log({data})
+                  }
                   })
-                },0)
+                },0) // yes, the ' 0 ms ' timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
               }
             });
             
