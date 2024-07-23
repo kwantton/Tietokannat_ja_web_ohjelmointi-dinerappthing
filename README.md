@@ -59,6 +59,8 @@ Here are some manuals regarding how I set up the thing:
 - https://developers.google.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerElement AdvancedMarkerElement; i.e. the markers you see on the map.
 - https://developers.google.com/maps/documentation/javascript/places#find_place_from_query Places Library; searching based on query, in my case, at least. You can also do much more with this.
 
+### other stuff
+- star rating shenanigans: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_star_rating
 
 ### requirements.txt contents (i.e., dependencies)
 - after git cloning onto your computer, run 'pip install requirement.txt' to install all the dependencies

@@ -14,6 +14,7 @@ CREATE TABLE restaurants (
     address TEXT
 );
 
+
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Krung Thep Thai Bistro Arabia', 'Hämeentie 153, 00560 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Egyptiläinen ravintola El Karim', 'Koskelantie 52, 00610 Helsinki');
@@ -31,6 +32,9 @@ INSERT INTO restaurants (restaurant_name, address) VALUES ('Platinum Lounge', 'A
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Kahvila Aurinko', 'Jyrängöntie 2 00560 Helsinki Finland');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Frangipani Bakery & Café', 'Intiankatu 25 00560 Helsinki');
 INSERT INTO restaurants (restaurant_name, address) VALUES ('Beer restaurant Oljenkorsi / Olutravintola Oljenkorsi', 'Intiankatu 18 00560 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Ravintola Tandoori Villa Metsälä', 'Niittyläntie 2 00620 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Beer restaurant Jano / Olutravintola Jano', 'Mäkitorpantie 11 00620 Helsinki');
+INSERT INTO restaurants (restaurant_name, address) VALUES ('Cafe Amore', 'Oulunkyläntie 7 00600 Helsinki');
 
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY, 
@@ -46,17 +50,20 @@ INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 3,
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 4, 'Käpygrilli on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 5, 'Hese on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 6, 'Nyyrikki on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 7, 'Iso Paja on ebin mage :D', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 7, 'Iso Paja on ebin mage :D olibas iso baja deillä. Bajabäänä dyggään govasdi :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 8, 'BK on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 9, 'Seor Cafe on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 10, 'Sotto on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 11, 'Old Sophie on ebin mage :D', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 11, 'Old Sophie on ebin mage :D eigä Sophie niin wanha ole wielä :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 12, 'CoolHead Brew on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 13, 'Harju 8 on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 14, 'Platinum Lounge on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 15, 'Kahvila Aurinko on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 16, 'Frangipani on ebin mage :D', NOW());
 INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 17, 'Oljenkorsi on ebin mage :D galja on hywää c:', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 18, 'Tandoori on ebin mage :D givad ganad deillä c:', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 19, 'Jano on ebin mage :D galja on hywää c:', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 20, 'Cafe Amore on ebin mage :D giwad gahwid deillä c:', NOW());
 
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY, 
@@ -84,3 +91,6 @@ INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VAL
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 15, 15, 4, NOW());
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 16, 16, 4, NOW());
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 17, 17, 5, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 18, 18, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 19, 19, 4, NOW());
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (1, 20, 20, 4, NOW());

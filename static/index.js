@@ -1,13 +1,14 @@
 // Initialize and add the map
 import apiServices from "./apiServices.js"; // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
+import starRating from "./starRating.js";
 
 let map;
-async function initMap(apiServices) {
+async function initMap(apiServices, starRating) {
 
   // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
   // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
   let data1 = await apiServices.getAll('/api/sessionuser') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
-  const user = data1.user
+  const user = data1.session_user
   console.log(`user: "${user}"`)
 
   // ratings
@@ -97,7 +98,7 @@ async function initMap(apiServices) {
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurant_id}`)
 
-            console.log("ratings_for_restaurant:",ratings_for_restaurant) 
+            // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
             const commentHTML = ratings_for_restaurant.map(item => 
               `<li> 
                 <p>
@@ -108,26 +109,47 @@ async function initMap(apiServices) {
               </li>`).join('')
 
             const rating_average = ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/ratings_for_restaurant.length
+            const starRatingHTML = starRating(rating_average)
+            const feedbackHTML = `
+            <div>
+              <p>Feedback:</p>
+              <textarea id='feedback-text' placeholder='feedback c:'></textarea>
+              <p>Rate:</p>
+              <div class="rating-posting-section-stars">
+                ${starRating(0)}
+              </div>
+              <button id='give-rating'>Submit</button>
+            </div>
+            `
+            const signInUltimatumHTML = `
+            <div>
+              <p>Want to share your experience? Sign in provide feedback!</p>
+              <a href='/'> login </a>
+            </div>
+              `;
 
-
-            const contentString =
+            // THIS IS THE ACTUAL CONTENT OF THE INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
+              const infoWindowContent =
             ` 
             <div id="content"> 
               <div id="siteNotice">
                 </div>
-                <h1 id="firstHeading" class="firstHeading">${location.name}</h1> 
+                <h1 id="firstHeading" class="firstHeading">${location.name}</h1>
+                ${starRatingHTML}
                 <div id="bodyContent">
                   <p><b>${location.address}</b></p>
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
-                  <h2>(culinary) services</h2>
+                  <h2>🍔/🍹/☕ </h2>
                   <ul>${descriptionsHTML}</ul>
                   <h2>comments</h2>
                   <p>
                     ${ratings_for_restaurant.length} review${ratings_for_restaurant.length === 1 ? '' : 's'}
-                    <br>average: ${rating_average}/5
+                    <br>average: ${Math.round(rating_average*100)/100}/5
+                    <br> ${starRatingHTML}
                   </p>
                   <ul>${commentHTML}</ul>
+                  ${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, show the feedbackHTML, otherwise sell the idea to them like your life depends on it. This is known as great customer service or something?*/}
                 </div> 
             </div>
             `;
@@ -135,7 +157,7 @@ async function initMap(apiServices) {
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
             const infowindow = new google.maps.InfoWindow({
-              content: contentString,
+              content: infoWindowContent,
               ariaLabel: location.name,
             });
 
@@ -143,8 +165,60 @@ async function initMap(apiServices) {
               infowindow.open({
                 anchor: diner_marker,
                 map,
-              })
-            })
+              });
+
+              let rating = null;
+
+              if (user !== '') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
+                setTimeout(() => {
+                
+                  document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars)
+                    star.addEventListener('click', (event) => {
+                      rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file
+                      // event.currentTarget.classList.toggle('checked')
+                      
+                      // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
+                      document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => {
+                        if (star.dataset.value <= rating) {
+                          star.classList.add('checked')     // e.g. if we're looking at star#2 ('<=', i.e. less or equal value) and the rating was 3, then ensure that star#2 is checked if it wasn't already (=yellow, not empty). This has to be checked as we don't know how many times the user is gonna change their mind or reclick before submitting the review!'.classList.add' is ok even if the class 'checked' is already present in the classList; 
+                        } else {
+                          star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
+                        }
+                      })
+                     
+                      console.log(`User rated: ${rating} stars`);
+                    });
+                  });
+
+                  document.querySelector('#give-rating').addEventListener('click', async event => {
+                    event.preventDefault() // we don't want to reload the whole page after sending the feedback
+                    const comment = document.querySelector('#feedback-text').value;
+                    const restaurant_name = location.name
+                    const body = {
+                      restaurant_id,
+                      restaurant_name,
+                      comment}
+                    if(rating) {
+                      body.rating = rating  // if a rating exists (is not null), then include that in the body
+                    } else {
+                      //pass
+                    }
+                    
+                    const response = await fetch('/api/feedback/', {
+                      method:'POST',
+                      headers:{
+                        'Content-Type':'application/json'
+                      },
+                      body:JSON.stringify(body)
+                    })
+                    const data = await response.json()
+                    console.log({data})
+
+                  })
+                },0)
+              }
+            });
+            
           } else {        // if getDetails doesn't succeed:
             console.error("getDetails was not successful for the following reason: " + detailStatus);
           };
@@ -157,4 +231,4 @@ async function initMap(apiServices) {
   };
 };
 
-initMap(apiServices);
+initMap(apiServices, starRating);

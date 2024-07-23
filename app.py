@@ -16,6 +16,34 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
+@app.route('/api/feedback/', methods=["POST"])
+def feedback():
+    data = request.get_json()
+    print("data:", data)
+    comment = data["comment"]
+    username = session["username"]
+    print("username (from session):", username)
+    result = db.session.execute(text('SELECT * FROM users WHERE users.username = :username'), {'username':username})
+    row = result.fetchone()
+    user_id = row.id
+    if comment != '':   # if a comment was provided, put it into the db
+        # comment_id is used in table 'ratings'
+        sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (:user_id, :restaurant_id, :comment, NOW())')
+        result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data["restaurant_id"], 'comment':comment})
+        db.session.commit()
+        result = db.session.execute(text('SELECT COUNT (*) FROM comments')) # the latest one that was just added
+        row = result.fetchone()
+        comment_id = row.count # atomatically column 'count' as explained in the course material
+    if 'rating' in data:    # if a rating was provided, put it into the db
+        if comment != '':
+            sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW())')
+            result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment_id':comment_id, 'rating':data['rating']})           
+        else:
+            sql = text('INSERT INTO ratings (user_id, restaurant_id, rating, created_at) VALUES (:user_id, :restaurant_id, :rating, NOW())')
+            result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'rating':data['rating']})
+        db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Rating and feedback submitted successfully'}) # this just returns this json back to the index where the fetch (post) was done! c: cool
+
 # This provides both the ratings AND the comments per each 'restaurant_id'
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
@@ -31,7 +59,7 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings = result.fetchall()
     rating_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row[1], 'address': row[2], 'username':row.username, 'user_id':row[4], 'comment_id':row[9], 'created_at':row[13], 'rating':row[7], 'comment':row[12]} for row in ratings]
-    print("rating_list:", rating_list)
+    # print("rating_list:", rating_list)
     return jsonify(rating_list)
 
 @app.route('/api/ratings')
@@ -53,11 +81,11 @@ def get_comments():
 @app.route("/api/sessionuser")  # for providing session.user to 'index.js'
 def get_sessionuser():
     try:
-        session_user = session["user"]
+        session_user = session["username"]
     except:
         session_user = ''
     print("session_user:", session_user)
-    return jsonify({'user':session_user})
+    return jsonify({'session_user':session_user}) # always '', why?
 
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
