@@ -16,8 +16,29 @@ API_key = getenv("GOOGLE_API_KEY")
 def index():
     return render_template('index.html')
 
+@app.route('/api/toggle-visibility-of-restaurant/<int:restaurant_id>')
+def toggle_visibility_of_restaurant(restaurant_id):
+    sql = text('''SELECT * FROM restaurants WHERE id=:restaurant_id''') 
+    result = db.session.execute(sql, {'restaurant_id':restaurant_id})
+    row = result.fetchone()
+    restaurant_object = {'restaurant_id':row.id, 'address':row.address, 'restaurant_visible':row.restaurant_visible}
+    if restaurant_object["restaurant_visible"]:
+        sql = text('''UPDATE restaurants SET restaurant_visible=FALSE WHERE id=:restaurant_id''')    # UPDATE doesn't return any rows!
+    else:
+        sql = text('''UPDATE restaurants SET restaurant_visible=TRUE WHERE id=:restaurant_id''')     # UPDATE doesn't return any rows!
+    db.session.execute(sql, {'restaurant_id':restaurant_id})
+    db.session.commit()
+
+    sql = text('''SELECT * FROM restaurants WHERE id=:restaurant_id''')
+    result = db.session.execute(sql, {'restaurant_id':restaurant_id})
+    # print("result:", get_result)
+    row = result.fetchone()
+    # print("\nrestaurants:", row)
+    restaurant_object = {'restaurant_id':row.id, 'address':row.address, 'restaurant_visible':row.restaurant_visible}
+    return jsonify(restaurant_object)
+
 @app.route('/api/toggle-visibility-of-rating/<int:rating_id>')
-def toggle_vis_of_rating(rating_id):
+def toggle_visibility_of_rating(rating_id):
     sql = text('''SELECT * FROM ratings WHERE id=:rating_id''') 
     result = db.session.execute(sql, {'rating_id':rating_id})
     row = result.fetchone()
@@ -68,6 +89,7 @@ def admin():
                     restaurants.id AS restaurant_id, 
                     restaurants.restaurant_name, 
                     restaurants.address, 
+                    restaurants.restaurant_visible,
                
                     users.username, 
                     users.id AS user_id, 
@@ -91,7 +113,7 @@ def admin():
                ''')
     result = db.session.execute(sql)
     ratings_with_comments = result.fetchall()
-    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'rating_id':row.rating_id, 'comment':row.comment, 'comment_visible':row.comment_visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'rating_id':row.rating_id, 'comment':row.comment, 'comment_visible':row.comment_visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
     sql = text('''SELECT * FROM restaurants;''')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
@@ -112,7 +134,7 @@ def feedback():
     user_id = row.id
     
     # comment_id is used in table 'ratings'
-    # I'm saving also empty comments, in case someone sends grades without comments, the user reading those ratings will see that no comment was provided
+    # I'm saving also empty comments (THEY SHOULDN'T EXIST THOUGH SINCE I CHECK FOR THAT IN JS in index.js, but it doesn't matter anyways c:), in case someone sends grades without comments, the user reading those ratings will see that no comment was provided
     sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE)')
     result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data["restaurant_id"], 'comment':comment})
     db.session.commit()
@@ -126,21 +148,33 @@ def feedback():
     return jsonify({'status': 'success', 'message': 'Rating and feedback submitted successfully'}) # this just returns this json back to the index where the fetch (post) was done! c: cool
 
 # This provides both the ratings AND the comments per each 'restaurant_id'
+# NB! I'm filtering out the restaurants where restaurant_visible = FALSE, BUT I'm not filtering out comments or ratings here; I'm doing that filtering in the index.js JS
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
-    sql = text('''SELECT * FROM 
-               restaurants LEFT JOIN 
-               ratings ON 
-               restaurants.id = ratings.restaurant_id LEFT JOIN 
-               comments ON 
-               ratings.comment_id = comments.id LEFT JOIN
-               users ON
-               ratings.user_id = users.id WHERE
-               restaurants.id = :restaurant_id''')
+    sql = text('''
+            SELECT * 
+                FROM 
+                    restaurants 
+                LEFT JOIN 
+                    ratings 
+                ON 
+                    restaurants.id = ratings.restaurant_id 
+                LEFT JOIN 
+                    comments 
+                ON 
+                    ratings.comment_id = comments.id 
+                LEFT JOIN
+                    users 
+                ON
+                    ratings.user_id = users.id 
+                WHERE
+                    restaurants.id = :restaurant_id
+                    AND restaurants.restaurant_visible
+               ''')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings_with_comments = result.fetchall()
-    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
-    print("ratings_with_comments_list:", ratings_with_comments_list)
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
+    # print("ratings_with_comments_list:", ratings_with_comments_list)
     return jsonify(ratings_with_comments_list)
 
 # I'm not actually using this for anything real... I think?
@@ -172,10 +206,10 @@ def get_sessionuser():
 
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
-    sql = text('SELECT * FROM restaurants')
+    sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
-    restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
+    restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible,} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
     return jsonify(restaurants_list)
 
 @app.route('/restaurants')

@@ -3,28 +3,30 @@
 {% if session.username == 'admin' %}
 
     <script>
-    
-    const toggleVisibilityOf = (id, target) => {
-        console.log(`should toggle visibility for the following ${target}:`, id)
-        fetch(`/api/toggle-visibility-of-${target}/${id}`)
-        .then(response => response.json())  // I think it just returns the
-        .then(data => {
-            console.log("data after updating id:", data)
-            window.location.reload()        // I'm reloading the page with my superpowers!
-        })
-    }
-
+        const toggleVisibilityOf = (id, target) => {
+            console.log(`should toggle visibility for the following ${target}:`, id)
+            fetch(`/api/toggle-visibility-of-${target}/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("data after updating id:", data)
+                window.location.reload()        // I'm reloading the page with my superpowers!
+            })
+        }
     </script>
 
     <h1> Welcome ! </h1>
     <p><em>Welcome, o dear admin!</em></p>
     <h2>restaurants</h2>
+    
     <ul>
         {% for restaurant in restaurants %}
-            <li>
-                <p> name: {{ restaurant.restaurant_name }}</p>
-                <p> address: {{ restaurant.address }}</p>
-                <button> delete </button>
+            <li>  <p>{{ restaurant.restaurant_name }}</p>
+                <ul>
+                    
+                    <li> address: {{ restaurant.address }}</li>
+                    <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
+                </ul>
+                <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> toggle restaurant visibility to users </button>
             </li>
         {% endfor %}
     </ul>
@@ -55,18 +57,21 @@
     <h2>ratings</h2>
     <ul>
         {% for item in ratings_with_comments_list %}
-            <li>
+            <li> <p>{{ item.restaurant_name }}, comment "{{ item.comment }}" by user "{{ item.username }}" </p>
                 <ul>
                 {% for key, value in item.items()%}
-                    <li class="nitty">{{ key }} : {{ value }}</li>
+                    <li class="colored">{{ key }} : {{ value }}</li>
                 {% endfor %}
                 </ul>
             </li>
-            <button onclick="toggleVisibilityOf({{ item.comment_id }}, 'comment')">toggle comment visibility to users</button> <!-- I'm having VSCode red here, but this works. So, linting error. Dunno how to fix.-->
-            <button onclick="toggleVisibilityOf({{item.rating_id}}, 'rating')">toggle rating visibility to users</button>
+            <!-- I'm having VSCode underlined red here below, but it works. So, linting problem. Dunno how to fix.-->
+            <button onclick="toggleVisibilityOf( {{ item.comment_id }}, 'comment' )">toggle comment visibility to users</button> 
+            <button onclick="toggleVisibilityOf( {{ item.rating_id }}, 'rating')">toggle rating visibility to users</button>
         {% endfor %}
     </ul>
-    <script>document.querySelectorAll('.nitty').forEach(li => {
+    
+    <!-- coloring <li> lines red if FALSE, green if TRUE -->
+    <script>document.querySelectorAll('.colored').forEach(li => {
         if (li.innerText.includes('True')) {
             li.style.color='green'
             li.style.fontWeight='bold'
