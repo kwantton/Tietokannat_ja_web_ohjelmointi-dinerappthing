@@ -2,16 +2,19 @@
 <a href="/"> back to home </a>
 {% if session.username == 'admin' %}
 
-    <script>const toggleVisibilityOfComment = comment_id => {
-        console.log("should toggle visibility for the following comment:", comment_id)
-        fetch(`/api/hide-comment/${comment_id}`)
+    <script>
+    
+    const toggleVisibilityOf = (id, target) => {
+        console.log(`should toggle visibility for the following ${target}:`, id)
+        fetch(`/api/toggle-visibility-of-${target}/${id}`)
         .then(response => response.json())  // I think it just returns the
         .then(data => {
-            console.log("data after updating comment:", data)
+            console.log("data after updating id:", data)
             window.location.reload()        // I'm reloading the page with my superpowers!
         })
     }
-    </script>  
+
+    </script>
 
     <h1> Welcome ! </h1>
     <p><em>Welcome, o dear admin!</em></p>
@@ -59,8 +62,8 @@
                 {% endfor %}
                 </ul>
             </li>
-            <button onclick="toggleVisibilityOfComment({{ item.comment_id }})">toggle visibility to users</button> <!-- I'm having VSCode red here, but this works. So, linting error. Dunno how to fix.-->
-            <button>remove associated rating</button>
+            <button onclick="toggleVisibilityOf({{ item.comment_id }}, 'comment')">toggle comment visibility to users</button> <!-- I'm having VSCode red here, but this works. So, linting error. Dunno how to fix.-->
+            <button onclick="toggleVisibilityOf({{item.rating_id}}, 'rating')">toggle rating visibility to users</button>
         {% endfor %}
     </ul>
     <script>document.querySelectorAll('.nitty').forEach(li => {

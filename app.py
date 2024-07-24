@@ -12,49 +12,86 @@ app.secret_key = getenv("SECRET_KEY")
 admin_password = getenv("ADMIN_PASSWORD")
 API_key = getenv("GOOGLE_API_KEY")
 
-
 @app.route("/")
 def index():
     return render_template('index.html')
 
-@app.route('/api/hide-comment/<int:comment_id>')
-def toggle_visibility(comment_id):
+@app.route('/api/toggle-visibility-of-rating/<int:rating_id>')
+def toggle_vis_of_rating(rating_id):
+    sql = text('''SELECT * FROM ratings WHERE id=:rating_id''') 
+    result = db.session.execute(sql, {'rating_id':rating_id})
+    row = result.fetchone()
+    rating_object = {'rating_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'rating':row.rating, 'created_at':row.created_at, 'rating_visible':row.rating_visible}
+    if rating_object["rating_visible"]:
+        sql = text('''UPDATE ratings SET rating_visible=FALSE WHERE id=:rating_id''')    # UPDATE doesn't return any rows!
+    else:
+        sql = text('''UPDATE ratings SET rating_visible=TRUE WHERE id=:rating_id''')     # UPDATE doesn't return any rows!
+    db.session.execute(sql, {'rating_id':rating_id})
+    db.session.commit()
+
+    sql = text('''SELECT * FROM ratings WHERE id=:rating_id''')
+    result = db.session.execute(sql, {'rating_id':rating_id})
+    # print("result:", get_result)
+    row = result.fetchone()
+    # print("\nratings:", row)
+    rating_object = {'rating_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'rating':row.rating, 'created_at':row.created_at, 'rating_visible':row.rating_visible}
+    return jsonify(rating_object)
+
+@app.route('/api/toggle-visibility-of-comment/<int:comment_id>')
+def toggle_visibility_of_comment(comment_id):
     sql = text('''SELECT * FROM comments WHERE id=:comment_id''') 
     result = db.session.execute(sql, {'comment_id':comment_id})
     row = result.fetchone()
     comment_object = {'comment_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at, 'visible':row.visible}
     if comment_object["visible"]:
-        sql = text('''UPDATE comments SET visible=FALSE WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+        sql = text('''UPDATE comments SET visible=FALSE WHERE id=:comment_id''')    # UPDATE doesn't return any rows!
     else:
-        sql = text('''UPDATE comments SET visible=TRUE WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+        sql = text('''UPDATE comments SET visible=TRUE WHERE id=:comment_id''')     # UPDATE doesn't return any rows!
     # print("\ncomment_id:", comment_id)
     
     db.session.execute(sql, {'comment_id':comment_id})
     db.session.commit()
 
-    sql = text('''SELECT * FROM comments WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+    sql = text('''SELECT * FROM comments WHERE id=:comment_id''') 
     result = db.session.execute(sql, {'comment_id':comment_id})
     # print("result:", get_result)
     row = result.fetchone()
     # print("\ncomments:", row)
     comment_object = {'comment_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at, 'visible':row.visible}
-    # return 'set invisible.. I think?'
     return jsonify(comment_object)
 
 @app.route('/admin')
 def admin():
-    sql = text('''SELECT * FROM 
-               restaurants LEFT JOIN 
-               ratings ON 
-               restaurants.id = ratings.restaurant_id LEFT JOIN 
-               comments ON 
-               ratings.comment_id = comments.id LEFT JOIN
-               users ON
-               ratings.user_id = users.id
+    # I need to have comments.id and ratings.id so I can conveniently toggle visibility of COMMENT and remove RATING; both need their own id. That's why I have to get specific below... sigh
+    sql = text('''
+                SELECT 
+                    restaurants.id AS restaurant_id, 
+                    restaurants.restaurant_name, 
+                    restaurants.address, 
+               
+                    users.username, 
+                    users.id AS user_id, 
+               
+                    comments.id AS comment_id, 
+                    comments.comment, 
+                    comments.visible AS comment_visible, 
+               
+                    ratings.id AS rating_id, 
+                    ratings.created_at, 
+                    ratings.rating, 
+                    ratings.rating_visible
+                FROM 
+                    restaurants LEFT JOIN 
+                ratings ON 
+                    restaurants.id = ratings.restaurant_id LEFT JOIN 
+                comments ON 
+                    ratings.comment_id = comments.id LEFT JOIN
+                users ON
+                    ratings.user_id = users.id
                ''')
     result = db.session.execute(sql)
     ratings_with_comments = result.fetchall()
-    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible} for row in ratings_with_comments]
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'rating_id':row.rating_id, 'comment':row.comment, 'comment_visible':row.comment_visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
     sql = text('''SELECT * FROM restaurants;''')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
@@ -83,7 +120,7 @@ def feedback():
     row = result.fetchone()
     comment_id = row.count # atomatically column 'count' as explained in the course material
     if 'rating' in data:    # if a rating was provided, put it into the db
-        sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW())')
+        sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW(), TRUE)')
         result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment_id':comment_id, 'rating':data['rating']})           
         db.session.commit()
     return jsonify({'status': 'success', 'message': 'Rating and feedback submitted successfully'}) # this just returns this json back to the index where the fetch (post) was done! c: cool
@@ -102,7 +139,7 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
                restaurants.id = :restaurant_id''')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings_with_comments = result.fetchall()
-    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible} for row in ratings_with_comments]
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
     print("ratings_with_comments_list:", ratings_with_comments_list)
     return jsonify(ratings_with_comments_list)
 

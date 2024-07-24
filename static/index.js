@@ -104,12 +104,13 @@ async function initMap(apiServices, starRating) {
               `<li> 
                 <p>
                   "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
-                  ${item.rating}/5 <br>
+                  ${item.rating_visible ? `${item.rating}/5` : '~~rating removed~~'} <br>
                   (by username "${item.username}")
                 </p>
               </li>`).join('')
 
-            const rating_average = ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/ratings_for_restaurant.length
+            const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
+            const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
             const starRatingHTML = starRating(rating_average)
             const feedbackHTML = `
             <div>
@@ -159,7 +160,7 @@ async function initMap(apiServices, starRating) {
                   <h2> feedback </h2>
                   ${user !== 'admin'
                     ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
-                    : ` <p> Admin cannot provide feedback; 'admin' doesn't have 'id' in table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
+                    : ` <p> Admin cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
                         <a href='/logout'>to logout</a>`
                   }
                   
