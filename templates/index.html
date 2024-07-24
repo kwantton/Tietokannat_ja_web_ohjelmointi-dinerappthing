@@ -1,8 +1,14 @@
 {% if session.username %}
     <p> Logged in with name {{ session.username }} </p>
-    <a href="\"> Home </a>
+    <a href="/"> Home </a>
     <br>
     <a href="/logout"> Log out </a>
+    <br>
+    
+    {% if session.username == 'admin' %}
+        <a href="/admin"> admin page </a>
+    {% endif %}
+
 {% else %}
     <p> Login: </p>
     <form action="/login" method="POST">

@@ -80,9 +80,9 @@ async function initMap(apiServices, starRating) {
               content: markerElement
             }); 
 
-            const openingHours = placeDetails.opening_hours?.weekday_text || []; // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
+            const openingHours = placeDetails.opening_hours?.weekday_text || [];  // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
             let openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
-            const openNow = placeDetails.opening_hours?.isOpen();   // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work otherwise!
+            const openNow = placeDetails.opening_hours?.isOpen();                 // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work without it!
             let openNowMsg = '';
             openNow 
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
@@ -99,10 +99,11 @@ async function initMap(apiServices, starRating) {
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurant_id}`)
 
             // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
+            // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
             const commentHTML = ratings_for_restaurant.map(item => 
               `<li> 
                 <p>
-                  "${item.comment}" <br>
+                  "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
                   ${item.rating}/5 <br>
                   (by username "${item.username}")
                 </p>
@@ -156,7 +157,12 @@ async function initMap(apiServices, starRating) {
                   </p>
                   <ul>${commentHTML}</ul>
                   <h2> feedback </h2>
-                  <div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, show the feedbackHTML, otherwise sell the idea to them like your life depends on it. This is known as great customer service or something?*/}</div>                  
+                  ${user !== 'admin'
+                    ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
+                    : ` <p> Admin cannot provide feedback; 'admin' doesn't have 'id' in table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
+                        <a href='/logout'>to logout</a>`
+                  }
+                  
                   <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div> 
                 </div> 
             </div>
@@ -177,7 +183,7 @@ async function initMap(apiServices, starRating) {
 
               let rating = null;
 
-              if (user !== '') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
+              if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
                 setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                 
                   document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars)

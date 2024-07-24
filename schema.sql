@@ -41,29 +41,30 @@ CREATE TABLE comments (
     user_id INTEGER REFERENCES users,
     restaurant_id INTEGER REFERENCES restaurants,
     comment TEXT,
-    created_at TIMESTAMP
+    created_at TIMESTAMP,
+    visible BOOLEAN
 );
 
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 1, 'Arabian Krung Thep Thai Bistro on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 2, 'Thai Meelom on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 3, 'El Karim on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 4, 'Käpygrilli on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 5, 'Hese on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 6, 'Nyyrikki on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 7, 'Iso Paja on ebin mage :D olibas iso baja deillä. Bajabäänä dyggään govasdi :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 8, 'BK on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 9, 'Seor Cafe on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 10, 'Sotto on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 11, 'Old Sophie on ebin mage :D eigä Sophie niin wanha ole wielä :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 12, 'CoolHead Brew on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 13, 'Harju 8 on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 14, 'Platinum Lounge on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 15, 'Kahvila Aurinko on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 16, 'Frangipani on ebin mage :D', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 17, 'Oljenkorsi on ebin mage :D galja on hywää c:', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 18, 'Tandoori on ebin mage :D givad ganad deillä c:', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 19, 'Jano on ebin mage :D galja on hywää c:', NOW());
-INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 20, 'Cafe Amore on ebin mage :D giwad gahwid deillä c:', NOW());
+INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (1, 1, 'Arabian Krung Thep Thai Bistro on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 2, 'Thai Meelom on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 3, 'El Karim on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 4, 'Käpygrilli on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 5, 'Hese on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 6, 'Nyyrikki on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 7, 'Iso Paja on ebin mage :D olibas iso baja deillä. Bajabäänä dyggään govasdi :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 8, 'BK on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 9, 'Seor Cafe on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 10, 'Sotto on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 11, 'Old Sophie on ebin mage :D eigä Sophie niin wanha ole wielä :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 12, 'CoolHead Brew on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 13, 'Harju 8 on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 14, 'Platinum Lounge on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 15, 'Kahvila Aurinko on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 16, 'Frangipani on ebin mage :D', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 17, 'Oljenkorsi on ebin mage :D galja on hywää c:', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 18, 'Tandoori on ebin mage :D givad ganad deillä c:', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 19, 'Jano on ebin mage :D galja on hywää c:', NOW(), TRUE);
+INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (1, 20, 'Cafe Amore on ebin mage :D giwad gahwid deillä c:', NOW(), TRUE);
 
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY, 

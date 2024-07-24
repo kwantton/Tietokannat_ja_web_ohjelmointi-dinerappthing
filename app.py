@@ -12,9 +12,56 @@ app.secret_key = getenv("SECRET_KEY")
 admin_password = getenv("ADMIN_PASSWORD")
 API_key = getenv("GOOGLE_API_KEY")
 
+
 @app.route("/")
 def index():
     return render_template('index.html')
+
+@app.route('/api/hide-comment/<int:comment_id>')
+def toggle_visibility(comment_id):
+    sql = text('''SELECT * FROM comments WHERE id=:comment_id''') 
+    result = db.session.execute(sql, {'comment_id':comment_id})
+    row = result.fetchone()
+    comment_object = {'comment_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at, 'visible':row.visible}
+    if comment_object["visible"]:
+        sql = text('''UPDATE comments SET visible=FALSE WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+    else:
+        sql = text('''UPDATE comments SET visible=TRUE WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+    # print("\ncomment_id:", comment_id)
+    
+    db.session.execute(sql, {'comment_id':comment_id})
+    db.session.commit()
+
+    sql = text('''SELECT * FROM comments WHERE id=:comment_id''') # UPDATE doesn't return any rows!
+    result = db.session.execute(sql, {'comment_id':comment_id})
+    # print("result:", get_result)
+    row = result.fetchone()
+    # print("\ncomments:", row)
+    comment_object = {'comment_id':row.id, 'user_id':row.user_id, 'restaurant_id':row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at, 'visible':row.visible}
+    # return 'set invisible.. I think?'
+    return jsonify(comment_object)
+
+@app.route('/admin')
+def admin():
+    sql = text('''SELECT * FROM 
+               restaurants LEFT JOIN 
+               ratings ON 
+               restaurants.id = ratings.restaurant_id LEFT JOIN 
+               comments ON 
+               ratings.comment_id = comments.id LEFT JOIN
+               users ON
+               ratings.user_id = users.id
+               ''')
+    result = db.session.execute(sql)
+    ratings_with_comments = result.fetchall()
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible} for row in ratings_with_comments]
+    sql = text('''SELECT * FROM restaurants;''')
+    result = db.session.execute(sql)
+    restaurants = result.fetchall()
+    sql = text('''SELECT * FROM users;''')
+    result = db.session.execute(sql)
+    users = result.fetchall()
+    return render_template('admin.html', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users)
 
 @app.route('/api/feedback/', methods=["POST"])
 def feedback():
@@ -29,7 +76,7 @@ def feedback():
     
     # comment_id is used in table 'ratings'
     # I'm saving also empty comments, in case someone sends grades without comments, the user reading those ratings will see that no comment was provided
-    sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at) VALUES (:user_id, :restaurant_id, :comment, NOW())')
+    sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE)')
     result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data["restaurant_id"], 'comment':comment})
     db.session.commit()
     result = db.session.execute(text('SELECT COUNT (*) FROM comments')) # the latest one that was just added
@@ -55,24 +102,26 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
                restaurants.id = :restaurant_id''')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings_with_comments = result.fetchall()
-    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row[1], 'address': row[2], 'username':row.username, 'user_id':row[4], 'comment_id':row[9], 'created_at':row[13], 'rating':row[7], 'comment':row[12]} for row in ratings_with_comments]
+    ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible} for row in ratings_with_comments]
     print("ratings_with_comments_list:", ratings_with_comments_list)
     return jsonify(ratings_with_comments_list)
 
+# I'm not actually using this for anything real... I think?
 @app.route('/api/ratings')
 def get_ratings():
     sql = text('SELECT * FROM ratings')
     result = db.session.execute(sql)
     ratings = result.fetchall()
-    rating_list = [{'id': row[0], 'user_id': row[1], 'restaurant_id': row[2], 'comment_id':row[3], 'rating':row[4], 'created_at':row[5]} for row in ratings]
+    rating_list = [{'id': row.id, 'user_id': row.user_id, 'restaurant_id': row.restaurant_id, 'comment_id':row.comment_id, 'rating':row.rating, 'created_at':row.created_at} for row in ratings]
     return jsonify(rating_list)
 
+# I'm not actually using this for anything real... I think?
 @app.route('/api/comments')
 def get_comments():
     sql = text('SELECT * FROM comments')
     result = db.session.execute(sql)
     comments = result.fetchall()
-    comment_list = [{'id': row[0], 'user_id': row[1], 'restaurant_id': row[2], 'comment':row[3], 'created_at':row[4]} for row in comments]
+    comment_list = [{'id': row.id, 'user_id': row.user_id, 'restaurant_id': row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at} for row in comments]
     return jsonify(comment_list)
 
 @app.route("/api/sessionuser")  # for providing session.user to 'index.js'
@@ -89,7 +138,7 @@ def get_restaurants_json():
     sql = text('SELECT * FROM restaurants')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
-    restaurants_list = [{'id': row[0], 'name': row[1], 'address': row[2]} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
+    restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
     return jsonify(restaurants_list)
 
 @app.route('/restaurants')
@@ -162,4 +211,4 @@ def register():
             result = db.session.execute(sql, {"username":username, "password":hash_value, "email":email})
             db.session.commit() # remember to commit!
             return render_template("/registration-successful.html")
-
+        

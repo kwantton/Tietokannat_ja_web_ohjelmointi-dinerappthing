@@ -1,0 +1,77 @@
+<!-- the whole admin page content shall be shown only if 'admin' is logged-in. NB! It is made possible in 'app.py' to make a username 'admin' in ALL cases, whether 'admin' is in db or not, and whether 'admin' even exists at all or not (admin is NOT in db, btw, admin password is only set as env.var, as you can see in 'app.py') -->
+<a href="/"> back to home </a>
+{% if session.username == 'admin' %}
+
+    <script>const toggleVisibilityOfComment = comment_id => {
+        console.log("should toggle visibility for the following comment:", comment_id)
+        fetch(`/api/hide-comment/${comment_id}`)
+        .then(response => response.json())  // I think it just returns the
+        .then(data => {
+            console.log("data after updating comment:", data)
+            window.location.reload()        // I'm reloading the page with my superpowers!
+        })
+    }
+    </script>  
+
+    <h1> Welcome ! </h1>
+    <p><em>Welcome, o dear admin!</em></p>
+    <h2>restaurants</h2>
+    <ul>
+        {% for restaurant in restaurants %}
+            <li>
+                <p> name: {{ restaurant.restaurant_name }}</p>
+                <p> address: {{ restaurant.address }}</p>
+                <button> delete </button>
+            </li>
+        {% endfor %}
+    </ul>
+    
+    <h2> add a restaurant (if Google Places API finds it, that is!): </h2>
+    <form action="/add-restaurant" method="POST">
+        <p> restaurant name
+            <input type="text" name="username" > </p>
+        <p> restaurant address
+            <input type="password" name="password1"> </p>
+        
+        <button>add restaurant</button>
+    </form>
+
+    <h2>users</h2>
+    <ul>
+        {% for user in users %}
+            <li>
+                <p> username: {{ user.username }} </p>
+                <p> is admin: {{ user.is_admin}} </p>
+                <p>email: {{ user.email}} </p>
+                
+                <button> delete user </button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>ratings</h2>
+    <ul>
+        {% for item in ratings_with_comments_list %}
+            <li>
+                <ul>
+                {% for key, value in item.items()%}
+                    <li class="nitty">{{ key }} : {{ value }}</li>
+                {% endfor %}
+                </ul>
+            </li>
+            <button onclick="toggleVisibilityOfComment({{ item.comment_id }})">toggle visibility to users</button> <!-- I'm having VSCode red here, but this works. So, linting error. Dunno how to fix.-->
+            <button>remove associated rating</button>
+        {% endfor %}
+    </ul>
+    <script>document.querySelectorAll('.nitty').forEach(li => {
+        if (li.innerText.includes('True')) {
+            li.style.color='green'
+            li.style.fontWeight='bold'
+        } else if (li.innerText.includes('False')) {
+            li.style.color='red'
+            li.style.fontWeight='bold'
+        }
+    })</script>
+{% else %}
+    <p>You are not logged in as the administrator. You seem sus.</p>
+{% endif %}
