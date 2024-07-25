@@ -4,6 +4,8 @@ from sqlalchemy import text                             # needed in new versions
 from flask_sqlalchemy import SQLAlchemy
 from os import getenv
 from werkzeug.security import check_password_hash, generate_password_hash
+from jinja2 import FileSystemLoader
+from jinja2 import Environment
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = getenv('DATABASE_URL')
@@ -12,9 +14,32 @@ app.secret_key = getenv("SECRET_KEY")
 admin_password = getenv("ADMIN_PASSWORD")
 API_key = getenv("GOOGLE_API_KEY")
 
+env = Environment(loader=FileSystemLoader('templates'))
+env.add_extension('jinja2.ext.loopcontrols')
+
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template('index.jinja')
+
+@app.route('/api/add-restaurant', methods=["POST"])
+def add_a_restaurant():
+    # print("hello from add_a_restaurant!")
+    # restaurant_name = request.form["restaurant_name"] 
+    # address = request.form["address"]
+    
+    # I sent a json, not a form, in the POST to this address from the admin page
+    data = request.get_json()   
+    print("data:", data)
+    restaurant_name = data.get('restaurant_name')
+    address = data.get('address')
+    sql = text('''
+    INSERT INTO restaurants (restaurant_name, address, restaurant_visible) 
+    VALUES (:restaurant_name, :address, TRUE)
+    ''')
+    result = db.session.execute(sql, {'restaurant_name':restaurant_name, 'address':address})
+    db.session.commit()
+    response = jsonify({'status': 'success', 'message': 'restaurant added'})
+    return response # this just returns this json back to the index where the fetch (post) was done! c: cool
 
 @app.route('/api/toggle-visibility-of-restaurant/<int:restaurant_id>')
 def toggle_visibility_of_restaurant(restaurant_id):
@@ -214,10 +239,11 @@ def get_restaurants_json():
 
 @app.route('/restaurants')
 def restaurants():
-    sql = text('SELECT * FROM restaurants')
+    sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
-    return render_template('map.html', key=API_key, restaurants=restaurants)    # actual google maps API in use here
+    restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
+    return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
     # return render_template('restaurants.html', restaurants=restaurants)         # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
 
 @app.route("/login", methods=["POST"])

@@ -1,0 +1,110 @@
+<html>
+  <head>
+    <title>Add Map</title>
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed to get the url that Flask is handling-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- star rating thingy -->
+    
+    
+    <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            <!-- index.js has the actual logic for map -->
+  </head>
+  <body>
+    <a href="/"> back to home</a>
+    <!--The div element for the map -->
+    <div id="map"></div>                <!-- height 100% etc, see style.css -->
+
+    <div id="ranked-restaurants">
+        <h2> Establishments (highest ranking first) </h2>
+        <ul>          
+            <script type="module">
+                
+                import filterRatingsForRestaurantId from '../static/filterRatingsForRestaurantId.js'
+                
+                const placeId_placeInfo = []  // meaning of name 'arrayId_info': array of JSONs {id: {...}}. Each JSON shall have properties 'id', 'name', 'average' and 'nRatings' (number of ratings)
+                
+                let infoHTML = document.createElement('ul')         // this infoHTML will be added to on every loop
+                const restaurants = {{ restaurants | tojson }} // if this shows red (linting error): install "betterJinja" from Extensions (in VSCode). That gets rid of the red underlining c:
+                console.log('restaurants:', restaurants) // restaurants: [{"address": "Hämeentie 153, 00560 Helsinki", "id": 1, "restaurant_name": "Krung Thep Thai Bistro Arabia", "restaurant_visible": true}, {"address": "Koskelantie 56, 00610 Helsinki", "id": 2, "restaurant_name": "Thai Ravintola Meelom Oy", "restaurant_visible": true}, {"address": "laurintie vantaa", "id": 3, "restaurant_name": "pizzeria toli", "restaurant_visible": true}, {"address": "ilola", "id": 4, "restaurant_name": "hesburger ilola", "restaurant_visible": true}, {"address": "kumpula", "id": 9, "restaurant_name": "kaljaravintola oljenkorsi", "restaurant_visible": true}, {"address": "kumpula", "id": 10, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 11, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 12, "restaurant_name": "iso paja", "restaurant_visible": true}]
+                
+                const promises = restaurants.map(async restaurant => {  // all these Promises (because 'async'!) are functions; this .map gathers them inside a list.
+
+                    const filteredRatings = await filterRatingsForRestaurantId(restaurant.id) // because the function is async, I have to 'await' for it to finish. Without await, you'd get a 'promise' instead - doesn't work!
+                    const ratingAverage = filteredRatings.reduce((sum, current) => current.rating + sum, 0)/filteredRatings.length
+                    const restaurantId_info = {
+                        'restaurant_id' : restaurant.id,
+                        'restaurant_name' : restaurant.restaurant_name,
+                        'address' : restaurant.address,
+                        'nRatings' : filteredRatings.length,
+                        'average' : filteredRatings[0] ? ratingAverage : 0 // if the average was calculated (not NaN, if /0), then use that. Otherwise the value shall be 0, so that the following sorting works (NaNs will mess up .sort of JS)
+                    }           // id, name, average, nRatings
+                    placeId_placeInfo.push(restaurantId_info)
+                })
+
+                console.log("promises:", promises) // you'll see 8 Promises with 'undefined' status; proving, they are not FULFILLED at this point yet
+                await Promise.all(promises) // if you don't wait for all the promises above to be fulfilled (it's async!), then the placeId_placeInfo will be empty, and no sorting will happen. This was kidly reminded me by ChatGPT. A JavaScript course: "Promise.all returns a Promise that fulfills when all the promises it receives have been fulfilled. It rejects when one of these promises fails. This allows you to execute more than one promise at the same time and wait until all of them have fulfilled."
+                
+                placeId_placeInfo.sort((a, b) => {
+                    // console.log({a,b})               // for each item in the list, this shows all the pairs that are compared. JS is smart about the comparisons; for example, if the whole list is in order, it will only compare each adjacent pair once, and so on - so it cuts down unnecessary work
+                    return b.average - a.average})      // sort of JS: (a,b) => if negative, then a comes before b. So, I'm sorting based on the vote average
+
+                console.log('placeId_placeInfo:', placeId_placeInfo)
+                
+                placeId_placeInfo.forEach(restaurantJSON => {
+                    const restaurantDivElement = document.createElement('div')
+
+                    // below, innerHTML would be usable as well, but that would enable script injection - textContent in JS is safe, since even if you write <script> there, it won't be interpreted as JS.
+                    const headerElement         =   document.createElement('h3')
+                    const restaurantUlElement   =   document.createElement('ul')
+                    const averageElement        =       document.createElement('li')
+                    const addressElement        =       document.createElement('li')
+                    
+                    headerElement.textContent = restaurantJSON.restaurant_name
+                    averageElement.textContent = restaurantJSON.nRatings === 0 
+                        ? '0 ratings'
+                        : `average ${restaurantJSON.average} (${restaurantJSON.nRatings} rating${restaurantJSON.nRatings === 1 ? '' : 's'})`
+                    addressElement.textContent = restaurantJSON.address
+                    restaurantDivElement.appendChild(headerElement)
+                    restaurantDivElement.appendChild(restaurantUlElement)
+                    restaurantUlElement.appendChild(averageElement)
+                    restaurantUlElement.appendChild(addressElement)
+                    
+                    // potential safety risk if admin is mean and adds to restaurant list some weird HTML
+                    infoHTML.appendChild(restaurantDivElement)
+                } )
+
+                document.querySelector('#ranked-restaurants').appendChild(infoHTML) // this just adds the infoHTML <ul> with all the <li>'s (restaurants in order) to the end of the <body> of this HTML
+                
+            </script>
+            
+        </ul>
+    </div>
+
+    <!-- prettier-ignore -->
+    <script>(g=>{
+        var h,a,k,p="The Google Maps JavaScript API",
+        c="google",
+        l="importLibrary",
+        q="__ib__",
+        m=document,
+        b=window;
+        b=b[c]||(b[c]={});
+        var d=b.maps||(b.maps={}),
+        r=new Set,e=new URLSearchParams,
+        u=()=>h||(h=new Promise(async(f,n)=>{
+            await (a=m.createElement("script"));
+            e.set("libraries",[...r]+"");
+            for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),
+            g[k]);
+            e.set("callback",c+".maps."+q);
+            a.src=`https://maps.${c}apis.com/maps/api/js?`+e;
+            d[q]=f;
+            a.onerror=()=>h=n(Error(p+" could not load."));
+            a.nonce=m.querySelector("script[nonce]")?.nonce||"";
+            m.head.append(a)
+        }));
+        d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))
+    })
+        ({key: "{{ key }}", v: "weekly"});
+    </script> <!-- note the "{{ key }} above!"; this is the way to incorporate variables passed from app.py (through the render_template) to html attributes, apparently. Cool! -->
+  </body>
+</html>

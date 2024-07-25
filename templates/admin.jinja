@@ -16,7 +16,7 @@
 
     <h1> Welcome ! </h1>
     <p><em>Welcome, o dear admin!</em></p>
-    <h2>restaurants</h2>
+    <h2>restaurants</h2>    
     
     <ul>
         {% for restaurant in restaurants %}
@@ -31,15 +31,60 @@
         {% endfor %}
     </ul>
     
-    <h2> add a restaurant (if Google Places API finds it, that is!): </h2>
-    <form action="/add-restaurant" method="POST">
-        <p> restaurant name
-            <input type="text" name="username" > </p>
-        <p> restaurant address
-            <input type="password" name="password1"> </p>
+    <h2> add a restaurant: </h2>
+    <p>NB! The name and address you provide in 'restaurant name' and 'restaurant address' below
+        will remain in the database as-is. HOWEVER, they are used only
+        for querying the Google Places API - therefore it is not necessary to provide the exact name or address for the query;
+        the Google Places API will find also locations based on approximate search terms.
+    For example: 'iso paja', 'kumpula' will successfully locate 'Ravintola Iso Paja' at address 
+    'Radiokatu 3, 00240 Helsinki, Finland' even though it's somewhat far from actual 'Kumpula', 
+    and the correct info will be shown to the users regardless.</p>
+
+    <form onsubmit="checkFields(event)">
         
-        <button>add restaurant</button>
+        <p> restaurant name
+            <input type="text" name="restaurant_name" > </p>
+        <p> restaurant address
+            <input type="text" name="address"> </p>
+        
+        <button>add restaurant</button> <!-- when a button is in a form, by default it submits-->
     </form>
+
+    <script> 
+        const checkFields = event => {
+            event.preventDefault() // otherwise the page will automatically reload, and none of the things below will ever happen c:
+            const form = event.currentTarget
+            if (form.restaurant_name.value === '' || form.address.value === '') {
+                alert("provide both an (approximate) name and a (approximate) address, or the maps api could find the wrong place!")
+            } else {
+                // reset the 'name' and 'address' -fields, and show a message that claims that the operation was successful. Note; this doesn't actually check if the operation was successful really; would need to make a call to db to see if the restaurant was really added. An alternative is to refresh the page after the posting, so you can directly see if it worked c:
+                const body = {
+                    restaurant_name:form.restaurant_name.value,
+                    address:form.address.value
+                }
+
+                fetch('/api/add-restaurant', {
+                    method:'POST',
+                    headers: {
+                        'Content-Type':'application/json'
+                    },
+                    body:JSON.stringify(body)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('data:',data)
+                    form.name.value = ''
+                    form.address.value = ''
+                    
+                    const successMessage = document.createElement("p") // create a success message paragraph
+                    successMessage.style.color = 'green'
+                    successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
+                    form.appendChild(successMessage)
+                })
+                .catch(error => console.error(error))  
+            }  
+        }   
+    </script>
 
     <h2>users</h2>
     <ul>

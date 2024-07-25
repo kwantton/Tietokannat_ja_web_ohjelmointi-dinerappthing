@@ -57,7 +57,8 @@ Here are some manuals regarding how I set up the thing:
 - https://developers.google.com/maps/documentation/javascript/adding-a-google-map#maps_add_map-html adding a Google Map
 - https://developers.google.com/maps/documentation/javascript/examples/infowindow-simple infowindow; when clicking on a custom-made marker, how to show an info window
 - https://developers.google.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerElement AdvancedMarkerElement; i.e. the markers you see on the map.
-- https://developers.google.com/maps/documentation/javascript/places#find_place_from_query Places Library; searching based on query, in my case, at least. You can also do much more with this.
+- https://developers.google.com/maps/documentation/javascript/places#find_place_from_query Places Library query; searching based on query, in my case, at least. You can also do much more with this.
+- https://developers.google.com/maps/documentation/places/web-service/details places API; all the different things you could be fetching through the API, such as wheelchair-accessibility, photos, formatted phone number... etc
 
 ### other stuff
 - star rating shenanigans: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_star_rating

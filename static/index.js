@@ -11,11 +11,11 @@ async function initMap(apiServices, starRating) {
   const user = data1.session_user
   console.log(`user: "${user}"`)
 
-  // ratings
+  // ratings, for checking
   const ratings = await apiServices.getAll('/api/ratings')
   console.log("ratings:", ratings)
 
-  // comments
+  // comments, for checking
   const comments = await apiServices.getAll('/api/comments')
   console.log("comments:", comments)
 
@@ -46,7 +46,7 @@ async function initMap(apiServices, starRating) {
   for (const location of json_of_locations) {       // for each location (=restaurant!) in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
     const request = {
       query: `${location.name} ${location.address}`,  // Template strings of JS. I'm querying based on both the name and the location, of course. It's the only sensible minimum requirement to get the exact location of the exact diner that I'm 'looking for' based on the search. This ` ${name} ${address}` just means; name + " " + address, in case you're not familiar with JS. It's called 'template strings' in JS.
-      fields: ['name', 'geometry', 'place_id', 'icon', 'icon_background_color']        // place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map.
+      fields: ['name', 'geometry', 'formatted_address', 'place_id', 'icon', 'icon_background_color']        // place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map. ref: (https://developers.google.com/maps/documentation/places/web-service/details)
     } // 'icon' is for getting image url (for getting png picture)
 
     service.findPlaceFromQuery(request, (results, status) => {
@@ -142,13 +142,14 @@ async function initMap(apiServices, starRating) {
             <div id="content"> 
               <div id="siteNotice">
                 </div>
-                <h1 id="firstHeading" class="firstHeading">${location.name}</h1>
+                <h1 id="firstHeading" class="firstHeading">${placeDetails.name}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
                 ${starRatingHTML}
                 <div id="bodyContent">
-                  <p><b>${location.address}</b></p>
+                  <!-- <p><b>${placeDetails.address}</b></p> -->
+                  <p><b>${place.formatted_address}</b></p>
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
-                  <h2>🍔/🍹/☕ </h2>
+                  <h2>¿🍔/🍹/☕? </h2>
                   <ul>${descriptionsHTML}</ul>
                   <h2>comments</h2>
                   <p>
