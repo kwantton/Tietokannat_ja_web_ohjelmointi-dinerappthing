@@ -4,7 +4,7 @@ from sqlalchemy import text                             # needed in new versions
 from flask_sqlalchemy import SQLAlchemy
 from os import getenv
 from werkzeug.security import check_password_hash, generate_password_hash
-from jinja2 import FileSystemLoader
+from jinja2 import FileSystemLoader                     # I've noticed no difference, but this would be a good idea once you're using betterJinja extension AND want it to also recognize .html files normally
 from jinja2 import Environment
 
 app = Flask(__name__)
@@ -145,7 +145,7 @@ def admin():
     sql = text('''SELECT * FROM users;''')
     result = db.session.execute(sql)
     users = result.fetchall()
-    return render_template('admin.html', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users)
+    return render_template('admin.jinja', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users)
 
 @app.route('/api/feedback/', methods=["POST"])
 def feedback():

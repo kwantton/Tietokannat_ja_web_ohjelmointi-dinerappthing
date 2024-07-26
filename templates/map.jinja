@@ -5,16 +5,43 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed to get the url that Flask is handling-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- star rating thingy -->
     
-    
     <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            <!-- index.js has the actual logic for map -->
   </head>
   <body>
     <a href="/"> back to home</a>
-    <!--The div element for the map -->
-    <div id="map"></div>                <!-- height 100% etc, see style.css -->
+    
+    <div id="map-search"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+        <h3> name search from places on the map </h3>
+        <p> press enter to update the search </p>
+        <input name="search-query" onchange="mapSearch(event)">        <!-- onchange is activated every time you push enter -->
+        <script>
+            const mapSearch = event => {
+                const query = event.currentTarget.value // if the search box says 'thai', then query = 'thai'
+                const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
+                console.log("markerContainers:", markerContainers)
+                markerContainers.forEach(markerContainer => {
+                    markerContainer.querySelectorAll('#label-element').forEach(labelElement => {
+                        if (query !== '') {
+                            if (labelElement.textContent.toLowerCase().includes(query)) {
+                                markerContainer.style.display = 'flex'      // display !== 'none' means that it's NOT hidden. Learned this on a JS course
+                            } else {
+                                markerContainer.style.display = 'none'      // display = 'none' hides the element
+                            }
+                        } else {
+                            markerContainer.style.display = 'flex'          // if the query is 'flex' (original) then show all markers!
+                        }
+                    })
+                })
+            }           
+        </script>
+    </div>
+    
+    <!--The div element for the map --> <!-- this comment, on the left, was here originally, from the Google API isntructions c: -->
+    <div id="map"></div>                <!-- height 100% etc, see style.css. NB! You CAN NOT change the name of this id, or the map (from index.js) will not load into this div at all! (see index.js 'map = new Map(document.getElementById("map")') -->
 
     <div id="search-function"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
         <h2> search </h2>
+        <p> name search for the list below </p>
         <p> press enter to update the search </p>
         <input name="search-query" onchange="search(event)">
     
@@ -27,9 +54,9 @@
                     infoElement.querySelectorAll('h3').forEach(header => {
                         if (query !== '') {
                             if (header.textContent.toLowerCase().includes(query)) {
-                                infoElement.style.display = ''
+                                infoElement.style.display = ''      // display = '' means that it's NOT hidden. Learned this on a JS course
                             } else {
-                                infoElement.style.display = 'none'
+                                infoElement.style.display = 'none'  // display = 'none' hides the element
                             }
                         } else {
                             infoElement.style.display = ''
@@ -40,11 +67,7 @@
                 //const averages = infoElements.querySelectorAll('#average-element')
                 //const addresses = infoElements.querySelectorAll('#address-element')
                 
-            }
-                
-                    
-
-                
+            }           
             
         </script>
     </div>
@@ -91,7 +114,7 @@
                     restaurantDivElement.id = 'restaurant-div-element'
 
                     // below, innerHTML would be usable as well, but that would enable script injection - textContent in JS is safe, since even if you write <script> there, it won't be interpreted as JS.
-                    const nameElement         =   document.createElement('h3')
+                    const nameElement           =   document.createElement('h3')
                     const restaurantUlElement   =   document.createElement('ul')
                     const averageElement        =       document.createElement('li')
                     const addressElement        =       document.createElement('li')
@@ -148,6 +171,6 @@
         d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))
     })
         ({key: "{{ key }}", v: "weekly"});
-    </script> <!-- note the "{{ key }} above!"; this is the way to incorporate variables passed from app.py (through the render_template) to html attributes, apparently. Cool! -->
+    </script> <!-- note the "{{ key }} above!"; this is of course Jinja syntax to pass the Google Cloud API key passed from app.py (through the render_template). -->
   </body>
 </html>
