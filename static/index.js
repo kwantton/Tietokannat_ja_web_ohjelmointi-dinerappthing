@@ -180,7 +180,7 @@ async function initMap(apiServices, starRating) {
                   <h2>comments</h2>
                   <p>
                     ${filtered_ratings_for_restaurant.length} review${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}
-                    <br>average: ${Math.round(rating_average*100)/100}/5
+                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''}
                     <br> ${starRatingHTML}
                   </p>
                   <ul>${commentHTML}</ul>

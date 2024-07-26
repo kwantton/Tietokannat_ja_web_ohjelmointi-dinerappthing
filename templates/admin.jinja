@@ -75,13 +75,14 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('data:',data)
-                    form.restaurant_name.value = ''
-                    form.address.value = ''
                     
                     const successMessage = document.createElement("p") // create a success message paragraph
                     successMessage.style.color = 'green'
                     successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
                     form.appendChild(successMessage)
+
+                    form.restaurant_name.value = ''
+                    form.address.value = ''             // reset fields in case admin wants to add another right away
                 })
                 .catch(error => console.error(error))  
             }  
