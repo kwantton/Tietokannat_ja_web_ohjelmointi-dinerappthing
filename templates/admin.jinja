@@ -75,7 +75,7 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('data:',data)
-                    form.name.value = ''
+                    form.restaurant_name.value = ''
                     form.address.value = ''
                     
                     const successMessage = document.createElement("p") // create a success message paragraph
@@ -96,7 +96,7 @@
                 <p> is admin: {{ user.is_admin}} </p>
                 <p>email: {{ user.email}} </p>
                 
-                <button> delete user </button>
+                
             </li>
         {% endfor %}
     </ul>

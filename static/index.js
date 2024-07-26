@@ -79,9 +79,14 @@ async function initMap(apiServices, starRating) {
             markerElement.style.height = '26px';
             // console.log("place.icon:", place.icon)                 // the URL for the icon png image
 
+            // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
+            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
+            let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
+
             // text label element for the marker above
             const labelElement = document.createElement('span');
-            labelElement.textContent = placeDetails.name;             // a label for the marker; otherwise you wouldn't see the name of the place by default.
+            labelElement.textContent = placeDetails.name;             // (1) a label for the marker; otherwise you wouldn't see the name of the place by default. (2) Also, the search-by-name in 'map.jinja' uses this!
+            labelElement.descriptions = sensible_descriptions         // I'M ADDING THIS CUSTOM ATTRIBUTE HERE for the search function 'map-search-descriptions' in 'map.jinja'. Because I'm already using the above 'labelElement.textContent' for the search that's based on the place name, it's most convenient to do this -> I can use the same logic in the search that's based on descriptions c:
             labelElement.style.marginTop = '5px';                     // position of the text relative to the marker; let's put it BELOW the marker itself            
             labelElement.style.backgroundColor = 'white';             // a background color to the label
             labelElement.style.padding = '2px 5px';                   // some padding to the label
@@ -110,9 +115,7 @@ async function initMap(apiServices, starRating) {
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
               : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>';   // if not openNow, this row, with red text
 
-            // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
-            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
-            let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
+            
 
             // the API for comments and ratings per location-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
             const restaurant_id = location.id // this is the SQL db 'restaurant_id'
@@ -162,7 +165,7 @@ async function initMap(apiServices, starRating) {
             // in principle, this would allow for <script> injection, BUT all this info is from Google Places API, so I guess I trust it
               const infoWindowContent =
             ` 
-            <div id="content"> 
+            <div id="info-window-content"> 
               
                 </div>
                 <h1 id="firstHeading" class="firstHeading">${placeDetails.name}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
@@ -173,7 +176,7 @@ async function initMap(apiServices, starRating) {
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
                   <h2>¿🍔/🍹/☕? </h2>
-                  <ul>${descriptionsHTML}</ul>
+                  <ul id='descriptions-html'>${descriptionsHTML}</ul>
                   <h2>comments</h2>
                   <p>
                     ${filtered_ratings_for_restaurant.length} review${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}

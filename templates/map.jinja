@@ -8,9 +8,10 @@
     <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            <!-- index.js has the actual logic for map -->
   </head>
   <body>
+    
     <a href="/"> back to home</a>
     
-    <div id="map-search"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+    <div id="map-search-name"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
         <h3> name search from places on the map </h3>
         <p> press enter to update the search </p>
         <input name="search-query" onchange="mapSearch(event)">        <!-- onchange is activated every time you push enter -->
@@ -18,7 +19,6 @@
             const mapSearch = event => {
                 const query = event.currentTarget.value // if the search box says 'thai', then query = 'thai'
                 const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
-                console.log("markerContainers:", markerContainers)
                 markerContainers.forEach(markerContainer => {
                     markerContainer.querySelectorAll('#label-element').forEach(labelElement => {
                         if (query !== '') {
@@ -26,6 +26,37 @@
                                 markerContainer.style.display = 'flex'      // display !== 'none' means that it's NOT hidden. Learned this on a JS course
                             } else {
                                 markerContainer.style.display = 'none'      // display = 'none' hides the element
+                            }
+                        } else {
+                            markerContainer.style.display = 'flex'          // if the query is 'flex' (original) then show all markers!
+                        }
+                    })
+                })
+            }           
+        </script>
+    </div>
+
+    
+    
+    <div id="map-search-descriptions"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+        <h3> category search from places on the map </h3>
+        <p> press enter to update the search </p>
+        <input name="search-query" onchange="descriptionsSearch(event)">        <!-- onchange is activated every time you push enter -->
+        <script>
+            const descriptionsSearch = event => {
+                const query = event.currentTarget.value // if the search box says 'thai', then query = 'thai'
+                const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
+                console.log("markerContainers:", markerContainers)
+                markerContainers.forEach(markerContainer => {
+                    markerContainer.querySelectorAll('#label-element').forEach(labelElement => {    
+                        if (query !== '') {
+                            for (let i = 0; i < labelElement.descriptions.length; i++) {            // I just learned that 'break;' is not possible for .forEach, so I have to use a normal loop instead
+                                if (labelElement.descriptions[i].toLowerCase().includes(query)) {
+                                    markerContainer.style.display = 'flex'      // display !== 'none' means that it's NOT hidden. Learned this on a JS course
+                                    break;                                      // if a description is found, then show the marker and stop looking
+                                } else {
+                                    markerContainer.style.display = 'none'      // display = 'none' hides the element
+                                }
                             }
                         } else {
                             markerContainer.style.display = 'flex'          // if the query is 'flex' (original) then show all markers!
