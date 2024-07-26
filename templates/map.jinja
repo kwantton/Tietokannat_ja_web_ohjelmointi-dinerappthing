@@ -13,6 +13,42 @@
     <!--The div element for the map -->
     <div id="map"></div>                <!-- height 100% etc, see style.css -->
 
+    <div id="search-function"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+        <h2> search </h2>
+        <p> press enter to update the search </p>
+        <input name="search-query" onchange="search(event)">
+    
+        <script>
+            const search = event => {
+                const query = event.currentTarget.value
+                
+                const restaurantDiv = document.querySelectorAll('#restaurant-div-element') // each of these (see below) has <h3> and <ul> with 2 <li>s
+                restaurantDiv.forEach(infoElement => {
+                    infoElement.querySelectorAll('h3').forEach(header => {
+                        if (query !== '') {
+                            if (header.textContent.toLowerCase().includes(query)) {
+                                infoElement.style.display = ''
+                            } else {
+                                infoElement.style.display = 'none'
+                            }
+                        } else {
+                            infoElement.style.display = ''
+                        }
+                        
+                    })
+                })
+                //const averages = infoElements.querySelectorAll('#average-element')
+                //const addresses = infoElements.querySelectorAll('#address-element')
+                
+            }
+                
+                    
+
+                
+            
+        </script>
+    </div>
+    
     <div id="ranked-restaurants">
         <h2> Establishments (highest ranking first) </h2>
         <ul>          
@@ -23,6 +59,7 @@
                 const placeId_placeInfo = []  // meaning of name 'arrayId_info': array of JSONs {id: {...}}. Each JSON shall have properties 'id', 'name', 'average' and 'nRatings' (number of ratings)
                 
                 let infoHTML = document.createElement('ul')         // this infoHTML will be added to on every loop
+                infoHTML.id = 'infoHTML'
                 const restaurants = {{ restaurants | tojson }} // if this shows red (linting error): install "betterJinja" from Extensions (in VSCode). That gets rid of the red underlining c:
                 console.log('restaurants:', restaurants) // restaurants: [{"address": "Hämeentie 153, 00560 Helsinki", "id": 1, "restaurant_name": "Krung Thep Thai Bistro Arabia", "restaurant_visible": true}, {"address": "Koskelantie 56, 00610 Helsinki", "id": 2, "restaurant_name": "Thai Ravintola Meelom Oy", "restaurant_visible": true}, {"address": "laurintie vantaa", "id": 3, "restaurant_name": "pizzeria toli", "restaurant_visible": true}, {"address": "ilola", "id": 4, "restaurant_name": "hesburger ilola", "restaurant_visible": true}, {"address": "kumpula", "id": 9, "restaurant_name": "kaljaravintola oljenkorsi", "restaurant_visible": true}, {"address": "kumpula", "id": 10, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 11, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 12, "restaurant_name": "iso paja", "restaurant_visible": true}]
                 
@@ -51,19 +88,24 @@
                 
                 placeId_placeInfo.forEach(restaurantJSON => {
                     const restaurantDivElement = document.createElement('div')
+                    restaurantDivElement.id = 'restaurant-div-element'
 
                     // below, innerHTML would be usable as well, but that would enable script injection - textContent in JS is safe, since even if you write <script> there, it won't be interpreted as JS.
-                    const headerElement         =   document.createElement('h3')
+                    const nameElement         =   document.createElement('h3')
                     const restaurantUlElement   =   document.createElement('ul')
                     const averageElement        =       document.createElement('li')
                     const addressElement        =       document.createElement('li')
+
+                    averageElement.id = 'average-element' // for the search function way above
+                    addressElement.id = 'address-element'
                     
-                    headerElement.textContent = restaurantJSON.restaurant_name
+                    nameElement.textContent = restaurantJSON.restaurant_name
                     averageElement.textContent = restaurantJSON.nRatings === 0 
                         ? '0 ratings'
                         : `average ${restaurantJSON.average} (${restaurantJSON.nRatings} rating${restaurantJSON.nRatings === 1 ? '' : 's'})`
                     addressElement.textContent = restaurantJSON.address
-                    restaurantDivElement.appendChild(headerElement)
+                    
+                    restaurantDivElement.appendChild(nameElement)
                     restaurantDivElement.appendChild(restaurantUlElement)
                     restaurantUlElement.appendChild(averageElement)
                     restaurantUlElement.appendChild(addressElement)
@@ -73,11 +115,12 @@
                 } )
 
                 document.querySelector('#ranked-restaurants').appendChild(infoHTML) // this just adds the infoHTML <ul> with all the <li>'s (restaurants in order) to the end of the <body> of this HTML
-                
             </script>
             
         </ul>
     </div>
+
+    
 
     <!-- prettier-ignore -->
     <script>(g=>{

@@ -33,12 +33,14 @@
     
     <h2> add a restaurant: </h2>
     <p>NB! The name and address you provide in 'restaurant name' and 'restaurant address' below
-        will remain in the database as-is. HOWEVER, they are used only
-        for querying the Google Places API - therefore it is not necessary to provide the exact name or address for the query;
+        will remain in the database as-is. They will thus also be shown in the restaurant list below the map
+        as-is. HOWEVER, they are atm used only for querying the Google Places API - therefore it is not necessary 
+        to provide the exact name or address for the query for the API to show them correctly in the map;
         the Google Places API will find also locations based on approximate search terms.
     For example: 'iso paja', 'kumpula' will successfully locate 'Ravintola Iso Paja' at address 
     'Radiokatu 3, 00240 Helsinki, Finland' even though it's somewhat far from actual 'Kumpula', 
-    and the correct info will be shown to the users regardless.</p>
+    and the correct info will be shown in the map to the users regardless. However, this 'iso paja' will be shown
+    in the list of restaurants below</p>
 
     <form onsubmit="checkFields(event)">
         
