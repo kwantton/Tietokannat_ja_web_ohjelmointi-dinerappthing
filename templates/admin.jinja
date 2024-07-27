@@ -35,15 +35,19 @@
     </ul>
     
     <h2> add a restaurant: </h2>
-    <p>NB! The name and address you provide in 'restaurant name' and 'restaurant address' below
-        will remain in the database as-is. They will thus also be shown in the restaurant list below the map
-        as-is. HOWEVER, they are atm used only for querying the Google Places API - therefore it is not necessary 
-        to provide the exact name or address for the query for the API to show them correctly in the map;
-        the Google Places API will find also locations based on approximate search terms.
+    <p>
+    NB! It is not necessary to provide the exact name or address in the search below:
+    Google Places API search will also find locations based on approximate search terms, and the name and address 
+    you provide in 'restaurant name' and 'restaurant address' below are used only for that. The search name and address
+    that you use below will NOT remain as-is in the database either: they are used ONLY for initial querying the Google Places API
+    in 'index.js': they will be updated in the db once you go to the map at '/restaurants'; as the API is used there (index.js),
+    the db will be updated at the same time. 
+    ((sidenote: the list below the map will have the updated names on the 2nd run (1st refresh) at '/restaurants'.))
+    
     For example: 'iso paja', 'kumpula' will successfully locate 'Ravintola Iso Paja' at address 
-    'Radiokatu 3, 00240 Helsinki, Finland' even though it's somewhat far from actual 'Kumpula', 
-    and the correct info will be shown in the map to the users regardless. However, this 'iso paja' will be shown
-    in the list of restaurants below</p>
+    'Radiokatu 3, 00240 Helsinki, Finland' - NOTABLY! - even though its location is somewhat far from actual 'Kumpula'. 
+    The correct info will be shown in the map to the users regardless.
+    </p>
 
     <form onsubmit="checkFields(event)">
         
@@ -99,8 +103,6 @@
                 <p> username: {{ user.username }} </p>
                 <p> is admin: {{ user.is_admin}} </p>
                 <p>email: {{ user.email}} </p>
-                
-                
             </li>
         {% endfor %}
     </ul>

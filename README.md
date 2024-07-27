@@ -1,21 +1,25 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
-A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews (WIP) by other users and give their own review (WIP).
-A selection of restaurants (and a couple of cafes) is initialized as a PostgreSQL database, from which markers are placed
+A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
+A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
 on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.
-Restaurants can be grouped by the admin according to some properties (WIP). The admin can delete reviews (WIP) by rendering them invisible to others (we don't want to permanently delete the evidence c;).
-The user can search for restaurants based on description (WIP).
+Restaurants can be grouped by the admin according to some properties (WIP). The admin can delete reviews by rendering them invisible to others (we don't want to permanently delete the evidence c;). The admin can also delete comments by rendering them invisible. These two can be done irrespective of each other. The review ratings are ignored in calculation of grade average for a place.
+The user can search for restaurants based on description and based on name. The admin can add new places according to a rough name and a rough address - the Places API will then search the official name and address and other info to be shown on map based on this. The rough name and address in the SQL db are updated to their official counterparts after they have been searched from the Places API. Only the official name and address are shown to the users.
 
 their own reviews, including a comment and a rating/5.
 ## TO-DO:
+- admin can create groups for restaurants based on properties, like "thai", "cafe", etc.
+- categories to DB
+- clean-up
+- it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
+
+## Done
 - add info, opening hours and sql-database-based ratings /5 to each location on the map
 - make it possible to add comments by users
 - admin can delete comments and ratings given by users (when they are clearly spam etc.)
 - restaurant search (textbox search based on name or description)
-- admin can create groups for restaurants based on properties, like "thai", "cafe", etc.
 - rating list; top restaurants
 - a user can search restaurants from the SQL database based on words of the desription / name
-
 
 ## SQL tables
 See schema.sql

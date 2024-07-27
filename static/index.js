@@ -36,9 +36,9 @@ async function initMap(apiServices, starRating) {
     mapId: "DEMO_MAP_ID",
   });
 
-  const response = await fetch('/api/restaurants')  // this is kinda cool; the way to access the (sql db) restaurants here in 'index.js'.
-  const data = await response.json()                // since this is the standard way, I'm writing "data"
-  const json_of_locations = data                    // just renaming for clarity c: this is the json with id:x, name:string, address:string that I made in app.py c:
+  const response = await fetch('/api/restaurants')  // accessing 'restaurants' (sql db table) directly here in 'index.js'.
+  const data = await response.json()                // "data" is the common way of naming response.json()...
+  const json_of_locations = data                    // ... but just renaming for clarity c: this is the json with id:x, name:string, address:string that I made in app.py c:
   const service = new PlacesService(map)
 
   // const geocoder = new Geocoder();               // this is not what I wanna use anymore, since based on address-based location alone this results in too rough lng and lat for the diners, and stacks different diners on top of each other (=in the same lng and lat) if multiple are located within the same building! Not great c:
@@ -46,9 +46,13 @@ async function initMap(apiServices, starRating) {
   for (const location of json_of_locations) {       // for each location (=restaurant!) in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
     const request = {
       query: `${location.name} ${location.address}`,  // Template strings of JS e.g., `${js_variable_name} some text`. I'm querying based on both the name and the location (from SQL db), of course. It's the only sensible minimum requirement to get the exact location of the exact diner that I'm 'looking for' based on the search. This ` ${name} ${address}` just means; name + " " + address, in case you're not familiar with JS. It's called 'template strings' in JS.
-      fields: ['name', 'geometry', 'formatted_address', 'place_id', 'icon', 'icon_background_color']        // place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map. ref: (https://developers.google.com/maps/documentation/places/web-service/details)
+      fields: ['name', 'geometry', 'formatted_address', 'place_id', 'icon', 'icon_background_color']        // NB! place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes the problem that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map. ref: (https://developers.google.com/maps/documentation/places/web-service/details)
     } // 'icon' is for getting image url (for getting png picture)
 
+    const restaurant_id_from_db = location.id
+
+
+    // QUERY to the Places API
     service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) { // if status is OK AND results exist (i.e., not null or undefined or whatever, which also would be interpreted as FALSE)
         const place = results[0];
@@ -61,7 +65,7 @@ async function initMap(apiServices, starRating) {
 
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-            
+
             // this container element is needed so I can place the label  for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time
             const markerContainer = document.createElement('div')     // normal JS, creating a new HTML element
             markerContainer.style.display = 'flex'
@@ -122,19 +126,26 @@ async function initMap(apiServices, starRating) {
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurant_id}`)
 
             // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
-            // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
-            const commentHTML = ratings_for_restaurant.map(item => 
-              `<li> 
-                <p>
-                  "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
-                  ${item.rating_visible ? `${item.rating}/5` : '~~rating removed~~'} <br>
-                  (by username "${item.username}")
-                </p>
-              </li>`).join('')
-
+            
             const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
             const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
-            const starRatingHTML = starRating(rating_average)
+            let starRatingHTML
+            filtered_ratings_for_restaurant.length !== 0
+              ? starRatingHTML = starRating(rating_average)
+              : starRatingHTML = ''
+            let commentHTML
+            filtered_ratings_for_restaurant.length !== 0
+              ? commentHTML = '<ul>' + ratings_for_restaurant.map(item => 
+                `<li> 
+                  <p>
+                    "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
+                    ${item.rating_visible ? `${item.rating}/5` : '~~rating removed~~'} <br>
+                    (by username "${item.username}")
+                  </p>
+                </li>`).join('') + '</ul>'
+              : commentHTML = '<p>no comments yet</p>'    
+            // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
+
             const feedbackHTML = `
             <div>
               <p>Feedback:</p>
@@ -164,8 +175,6 @@ async function initMap(apiServices, starRating) {
               const infoWindowContent =
             ` 
             <div id="info-window-content"> 
-              
-                </div>
                 <h1 id="firstHeading" class="firstHeading">${placeDetails.name}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
                 ${starRatingHTML}
                 <div id="bodyContent">
@@ -181,7 +190,7 @@ async function initMap(apiServices, starRating) {
                     ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''}
                     <br> ${starRatingHTML}
                   </p>
-                  <ul>${commentHTML}</ul>
+                  ${commentHTML}
                   <h2> feedback </h2>
                   ${user !== 'admin'
                     ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
@@ -189,18 +198,45 @@ async function initMap(apiServices, starRating) {
                         <a href='/logout'>to logout</a>`
                   }
                   
-                  <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div> 
-              </div> 
+                  <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
             </div>
             `;
             // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
+
+            // BEFORE ANYTHING ELSE, let's also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API. Why? Because in the admin page of this site, the admin can add rough names and addresses, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map
+            const body = {
+              'restaurant_id': restaurant_id_from_db,
+              'restaurant_name': placeDetails.name,
+              'address': place.formatted_address
+              }
+            
+              try {
+                const response = await fetch('/api/update-name-and-address', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(body)
+                });
+            
+                const data = await response.json();
+            
+                if (response.ok) {
+                  console.log('Update successful:', data);
+                } else {
+                  console.error('Update failed:', data);
+                }
+              } catch (error) {
+                console.error('Error:', error);
+              }
 
             const infowindow = new google.maps.InfoWindow({
               content: infoWindowContent,
               ariaLabel: location.name,
             });
 
+            // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shwon
             diner_marker.addListener('click', () => { // so that when you click on the diner_marker, you'll see the infowindow
               infowindow.open({
                 anchor: diner_marker,
@@ -225,7 +261,7 @@ async function initMap(apiServices, starRating) {
                           star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
                         }
                       })
-                     
+
                       console.log(`User rated: ${rating} stars`);
                     });
                   });
@@ -275,7 +311,7 @@ async function initMap(apiServices, starRating) {
         console.error("findPlaceFromQuery was not successful for the following reason: " + status); // this is printed in browser
       }
     });
-  };
+  }; // 'for const location of json_of_locations' ends here!
 };
 
 initMap(apiServices, starRating);

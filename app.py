@@ -4,7 +4,7 @@ from sqlalchemy import text                             # needed in new versions
 from flask_sqlalchemy import SQLAlchemy
 from os import getenv
 from werkzeug.security import check_password_hash, generate_password_hash
-from jinja2 import FileSystemLoader                     # I've noticed no difference, but this would be a good idea once you're using betterJinja extension AND want it to also recognize .html files normally
+from jinja2 import FileSystemLoader                     # I haven't got it to work yet, but it would be a good idea once you're using betterJinja extension AND want it to also recognize '.html' files, not just '.jinja' files
 from jinja2 import Environment
 
 app = Flask(__name__)
@@ -21,13 +21,62 @@ env.add_extension('jinja2.ext.loopcontrols')
 def index():
     return render_template('index.jinja')
 
+@app.route('/api/update-name-and-address', methods=["POST"])
+def update_name_and_address():
+    print("\nhello from update_name_and_address()!")
+    try:
+        data = request.get_json()
+        print("\tdata:", data)
+        restaurant_name = data.get('restaurant_name')
+        address = data.get('address')
+        restaurant_id = data.get('restaurant_id')
+        print("\tid:", restaurant_id)
+
+        # Verify the restaurant exists
+        test_sql = text('SELECT * FROM restaurants WHERE id=:id')
+        rows = db.session.execute(test_sql, {'id': restaurant_id})
+        test_result = rows.fetchall()
+        print("\ttest_result:", test_result)  # Verify that the restaurant exists
+
+        if not test_result:
+            print("\tNo restaurant found with the given ID")
+            return jsonify({'status': 'error', 'message': 'Restaurant not found'}), 404
+
+        existing_restaurant = test_result[0]
+        print("\texisting_restaurant:", existing_restaurant)
+
+        # Check if data is actually different
+        if existing_restaurant.restaurant_name == restaurant_name and existing_restaurant.address == address:
+            print("\tNo changes detected")
+            response = jsonify({'status': 'success', 'message': 'No changes detected'})
+            return response
+
+        # Log the actual query being executed
+        print(f"Executing query: UPDATE restaurants SET restaurant_name='{restaurant_name}', address='{address}' WHERE id={restaurant_id}")
+
+        # Perform the update
+        sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
+        result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
+        print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected
+        db.session.commit()
+        print("\tSession state after commit:", db.session.info)  # Print session state
+
+        # Verify the update
+        rows_after_update = db.session.execute(test_sql, {'id': restaurant_id})
+        result_after_update = rows_after_update.fetchall()
+        print("\tresult_after_update:", result_after_update)  # Verify the update
+
+        response = jsonify({'status': 'success', 'message': 'Restaurant info updated'})
+        return response
+    except Exception as e:
+        print("Error updating restaurant:", e)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 @app.route('/api/add-restaurant', methods=["POST"])
 def add_a_restaurant():
-    # print("hello from add_a_restaurant!")
-    # restaurant_name = request.form["restaurant_name"] 
-    # address = request.form["address"]
-    
-    # I sent a json, not a form, in the POST to this address from the admin page
+
+    # I sent a json, not a form, in the POST to this address from the 'admin.jinja' page - so
     data = request.get_json()   
     print("data:", data)
     restaurant_name = data.get('restaurant_name')
@@ -39,7 +88,7 @@ def add_a_restaurant():
     result = db.session.execute(sql, {'restaurant_name':restaurant_name, 'address':address})
     db.session.commit()
     response = jsonify({'status': 'success', 'message': 'restaurant added'})
-    return response # this just returns this json back to the index where the fetch (post) was done! c: cool
+    return response # this just returns this json back to where the fetch (post) was done! c: cool
 
 @app.route('/api/toggle-visibility-of-restaurant/<int:restaurant_id>')
 def toggle_visibility_of_restaurant(restaurant_id):
@@ -112,21 +161,21 @@ def admin():
     sql = text('''
                 SELECT 
                     restaurants.id AS restaurant_id, 
-                    restaurants.restaurant_name, 
-                    restaurants.address, 
-                    restaurants.restaurant_visible,
+                    restaurant_name, 
+                    address, 
+                    restaurant_visible,
                
-                    users.username, 
+                    username, 
                     users.id AS user_id, 
                
                     comments.id AS comment_id, 
-                    comments.comment, 
-                    comments.visible AS comment_visible, 
+                    comment, 
+                    visible AS comment_visible, 
                
                     ratings.id AS rating_id, 
                     ratings.created_at, 
-                    ratings.rating, 
-                    ratings.rating_visible
+                    rating, 
+                    rating_visible
                 FROM 
                     restaurants LEFT JOIN 
                 ratings ON 
@@ -135,6 +184,8 @@ def admin():
                     ratings.comment_id = comments.id LEFT JOIN
                 users ON
                     ratings.user_id = users.id
+                WHERE
+                    rating IS NOT NULL OR comment IS NOT NULL
                ''')
     result = db.session.execute(sql)
     ratings_with_comments = result.fetchall()
@@ -308,4 +359,3 @@ def register():
             result = db.session.execute(sql, {"username":username, "password":hash_value, "email":email})
             db.session.commit() # remember to commit!
             return render_template("/registration-successful.html")
-        
