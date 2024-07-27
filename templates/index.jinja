@@ -1,3 +1,7 @@
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" />
+</head>
+
 {% if session.username %}
     <p> Logged in with name {{ session.username }} </p>
     <a href="/"> Home </a>
@@ -16,7 +20,8 @@
             <input type="text" name="username"> </p>
         <p> password: <br>
             <input type="password" name="password"></p>
-        <input type="submit" value="log in">
+        {# <input type="submit" value="log in"> <!-- this works as a button, but since I'd like to use the css for <button> instead, I'm using button below --> #}
+        <button> log in </button>
     </form>
     <p> Create an account:</p>
     <a href="/register"> new account</a>

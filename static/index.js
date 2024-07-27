@@ -115,8 +115,6 @@ async function initMap(apiServices, starRating) {
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
               : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>';   // if not openNow, this row, with red text
 
-            
-
             // the API for comments and ratings per location-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
             const restaurant_id = location.id // this is the SQL db 'restaurant_id'
             

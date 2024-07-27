@@ -1,5 +1,8 @@
 <!-- the whole admin page content shall be shown only if 'admin' is logged-in. NB! It is made possible in 'app.py' to make a username 'admin' in ALL cases, whether 'admin' is in db or not, and whether 'admin' even exists at all or not (admin is NOT in db, btw, admin password is only set as env.var, as you can see in 'app.py') -->
 <a href="/"> back to home </a>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" />
+</head>
 {% if session.username == 'admin' %}
 
     <script>
