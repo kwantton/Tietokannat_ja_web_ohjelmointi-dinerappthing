@@ -9,19 +9,19 @@ The user can search for restaurants based on description and based on name. The 
 their own reviews, including a comment and a rating/5.
 ## TO-DO:
 - admin can create groups for restaurants based on properties, like "thai", "cafe", etc.
-- categories to DB
 - clean-up
 
 ## Done
-- add info, opening hours and sql-database-based ratings /5 to each location on the map
-- make it possible to add comments by users
-- admin can delete comments and ratings given by users (when they are clearly spam etc.)
-- restaurant search (textbox search based on name or description)
-- rating list; top restaurants
-- a user can search restaurants from the SQL database based on words of the desription / name
-- add timestamps after comments and ratings
+[x] add info, opening hours and sql-database-based ratings /5 to each custom location on the map
+[x] possible for users to add comments and ratings
+[x] admin can delete comments and ratings given by users (when they are clearly spam etc.)
+[x] restaurant search (textbox search based on name OR place categories and description)
+[x] rating list; top restaurants
+[x] a user can search restaurants from the SQL database based on words of the desription / name
+[x] add timestamps after comments and ratings
+[x] restaurant categories are stored in DB, fetched from DB, using both admin-managed custom categories and descriptions fetched from the Places API
 
-## No time to do
+## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
 
 ## SQL tables
@@ -30,6 +30,7 @@ See schema.sql
 - restaurants   id      restaurant_name     street address      restaurant_visible
 - ratings       id      restaurant_id       user_id             comment_id          rating (0...5)  created_at  rating_visible
 - comments      id      user_id             restaurant_id       comment             visible         created_at
+- restaurant_categories id  restaurant_id   category            category_visible
 
 ## WIP: premature manual (planning)
 ### AFTER GIT CLONING:
