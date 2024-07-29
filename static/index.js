@@ -84,7 +84,14 @@ async function initMap(apiServices, starRating) {
             // console.log("place.icon:", place.icon)                 // the URL for the icon png image
 
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
-            const sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
+            const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurant_id_from_db}`)
+            let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
+            const descriptionsLower = sensible_descriptions.map(d => d.toLowerCase()) // copy for testing
+            categoriesFromDb.forEach(categoryJSON => {
+              if (!descriptionsLower.includes(categoryJSON.category.toLowerCase())) {
+                sensible_descriptions.push(categoryJSON.category)
+              }
+            })
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
             // text label element for the marker above
@@ -130,7 +137,6 @@ async function initMap(apiServices, starRating) {
             const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
             const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
             let starRatingHTML
-            
             
             filtered_ratings_for_restaurant.length !== 0
               ? starRatingHTML = starRating(rating_average)
@@ -206,15 +212,16 @@ async function initMap(apiServices, starRating) {
             // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
-            // BEFORE ANYTHING ELSE, let's also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API. Why? Because in the admin page of this site, the admin can add rough names and addresses, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map
+            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API. Why? Because in the admin page of this site, the admin can add rough names and addresses, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
             const body = {
               'restaurant_id': restaurant_id_from_db,
               'restaurant_name': placeDetails.name,
-              'address': place.formatted_address
+              'address': place.formatted_address,
+              'descriptions':sensible_descriptions
               }
             
               try {
-                const response = await fetch('/api/update-name-and-address', {
+                const response = await fetch('/api/update-name-address-categories', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json'
@@ -225,7 +232,11 @@ async function initMap(apiServices, starRating) {
                 const data = await response.json();
             
                 if (response.ok) {
-                  console.log('Update successful:', data);
+                  let updatedOrNot
+                  data.updated === ''
+                    ?  updatedOrNot = 'Database was already up to date: no name, address or category updates were done in db.'
+                    :  updatedOrNot = 'UPDATED database successfully as follows:'
+                  console.log(updatedOrNot, data);
                 } else {
                   console.error('Update failed:', data);
                 }

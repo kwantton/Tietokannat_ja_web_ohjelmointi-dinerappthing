@@ -44,7 +44,7 @@
             const descriptionsSearch = event => {
                 const query = event.currentTarget.value // if the search box says 'thai', then query = 'thai'
                 const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
-                console.log("markerContainers:", markerContainers)
+                // console.log("markerContainers:", markerContainers)
                 markerContainers.forEach(markerContainer => {
                     markerContainer.querySelectorAll('#label-element').forEach(labelElement => {    
                         if (query !== '') {
@@ -129,14 +129,14 @@
                     placeId_placeInfo.push(restaurantId_info)
                 })
 
-                console.log("promises:", promises) // you'll see 8 Promises with 'undefined' status; proving, they are not FULFILLED at this point yet
+                // console.log("promises:", promises) // you'll see 8 Promises with 'undefined' status; proving, they are not FULFILLED at this point yet
                 await Promise.all(promises) // if you don't wait for all the promises above to be fulfilled (it's async!), then the placeId_placeInfo will be empty, and no sorting will happen. This was kidly reminded me by ChatGPT. A JavaScript course: "Promise.all returns a Promise that fulfills when all the promises it receives have been fulfilled. It rejects when one of these promises fails. This allows you to execute more than one promise at the same time and wait until all of them have fulfilled."
 
                 placeId_placeInfo.sort((a, b) => {
                     // console.log({a,b})               // for each item in the list, this shows all the pairs that are compared. JS is smart about the comparisons; for example, if the whole list is in order, it will only compare each adjacent pair once, and so on - so it cuts down unnecessary work
                     return b.average - a.average})      // sort of JS: (a,b) => if negative, then a comes before b. So, I'm sorting based on the vote average
 
-                console.log('placeId_placeInfo:', placeId_placeInfo)
+                //console.log('placeId_placeInfo:', placeId_placeInfo)
 
                 placeId_placeInfo.forEach(restaurantJSON => {
                     const restaurantDivElement = document.createElement('div')

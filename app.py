@@ -21,7 +21,15 @@ env.add_extension('jinja2.ext.loopcontrols')
 def index():
     return render_template('index.jinja')
 
-@app.route('/api/update-name-and-address', methods=["POST"])
+@app.route('/api/get-categories/<int:restaurant_id>')
+def get_categories_by_restaurant_id(restaurant_id):
+    sql = text('SELECT * FROM restaurant_categories WHERE restaurant_id = :restaurant_id')
+    result = db.session.execute(sql, {'restaurant_id':restaurant_id})
+    rows = result.fetchall()
+    list_of_db_categories = [{'restaurant_id':row.restaurant_id, 'category':row.category, 'category_visible':row.category_visible} for row in rows]
+    return jsonify(list_of_db_categories)
+
+@app.route('/api/update-name-address-categories', methods=["POST"])
 def update_name_and_address():
     print("\nhello from update_name_and_address()!")
     try:
@@ -30,6 +38,7 @@ def update_name_and_address():
         restaurant_name = data.get('restaurant_name')
         address = data.get('address')
         restaurant_id = data.get('restaurant_id')
+        descriptions = data.get('descriptions')
         print("\tid:", restaurant_id)
 
         # check if the restaurant exists in the db
@@ -46,27 +55,50 @@ def update_name_and_address():
         print("\texisting_restaurant:", existing_restaurant)
 
         # check if the data is actually different. I was initially accidentally trying to update with the same name and address and was wondering why nothing was updated - this was the reason...
+        check_msg = ''
         if existing_restaurant.restaurant_name == restaurant_name and existing_restaurant.address == address:
             print("\tNo changes - not going to update name or address")
             response = jsonify({'status': 'success', 'message': 'No changes detected'})
-            return response
+        else:
+            # Log the actual query being executed
+            print(f"Executing query: UPDATE restaurants SET restaurant_name='{restaurant_name}', address='{address}' WHERE id={restaurant_id}")
 
-        # Log the actual query being executed
-        print(f"Executing query: UPDATE restaurants SET restaurant_name='{restaurant_name}', address='{address}' WHERE id={restaurant_id}")
+            # Since name and address are different, perform the update
+            sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
+            result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
+            print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected
+            db.session.commit()
+            print("\tSession state after commit:", db.session.info)  # Print session state
 
-        # Since name and address are different, perform the update
-        sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
-        result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
-        print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected
-        db.session.commit()
-        print("\tSession state after commit:", db.session.info)  # Print session state
+            # Verify that name and address were changed
+            rows_after_update = db.session.execute(test_sql, {'id': restaurant_id})
+            result_after_update = rows_after_update.fetchall()
+            print("\tresult_after_update:", result_after_update)  # Verify the update
+            check_msg += 'Restaurant name and/or address updated! '
 
-        # Verify the update
-        rows_after_update = db.session.execute(test_sql, {'id': restaurant_id})
-        result_after_update = rows_after_update.fetchall()
-        print("\tresult_after_update:", result_after_update)  # Verify the update
+        # Check the old categories (sql db) AND the descriptions (from 'index.js' Places API). If some descriptions are not found in the db, then add them there, so the admin can see them too, and doesn't have to add them themselves separately (for example, if cafe is there already by Places API, then that's less work for the admin).
+        sql = text('SELECT * FROM restaurant_categories WHERE restaurant_id = :restaurant_id')
+        result = db.session.execute(sql, {'restaurant_id':restaurant_id})
+        current_categories = result.fetchall()
+        print("current categories:", current_categories)
 
-        response = jsonify({'status': 'success', 'message': 'Restaurant info updated'})
+        list_of_current_categories = [{'restaurant_id':row.restaurant_id, 'category':row.category, 'category_visible':row.category_visible} for row in current_categories]
+        check_set = set()
+        for item in list_of_current_categories:
+            check_set.add(item['category'].lower())
+        update_msg = False
+        for description in descriptions:
+            if description.lower() not in check_set:
+                update_msg = True
+                sql = text('''INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (:restaurant_id,:category,TRUE);''')
+                db.session.execute(sql, {'restaurant_id':restaurant_id, 'category':description})
+                db.session.commit()
+        if update_msg:
+            check_msg += 'Updated restaurant categories! '
+
+        if update_msg == '':
+            update_msg = 'no updates'
+        response = jsonify({'status': 'success', 'updated': check_msg})
         return response
     except Exception as e:
         print("Error updating restaurant:", e)

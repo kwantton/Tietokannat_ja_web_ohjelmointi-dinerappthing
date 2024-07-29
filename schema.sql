@@ -46,20 +46,15 @@ CREATE TABLE restaurant_categories (
     category_visible BOOLEAN
 );
 
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'thailand',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'thaimaa',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'oriental',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'thailand',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'thaimaa',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'oriental',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'thai',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'asian',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'thai',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'asian',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (3,'egyptian',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (3,'egypti',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'grilli',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'grill',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'fried',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'paistettu',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'burger',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'suomi',TRUE);
-INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'finland',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'finnish',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (8,'burger',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (14,'lounge',TRUE);
 INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (18,'indian',TRUE);
