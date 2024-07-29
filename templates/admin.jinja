@@ -23,17 +23,27 @@
 
     <ul>
         {% for restaurant in restaurants %}
-            <li>  <p>{{ restaurant.restaurant_name }}</p>
+            <li>  <p> {{ restaurant.restaurant_name }} </p>
                 <ul>
                     <li> address: {{ restaurant.address }}</li>
                     <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
                     <li> categories
-                        <ul id="categories">
+                        <ul id="categories-{{ restaurant.id }}"> <!-- I can add to this list the new item -->
                             {% for category in restaurant_categories %}
                                 {% if category.restaurant_id == restaurant.id %} <!-- I forgot I can just use Python here :D -->
-                                    <li> {{ category.category }} </li>
+                                    <li class="colored"> {{ category.category }}, visible: {{ category.category_visible }} </li>
+                                    {% if category.category_visible %}
+                                        {% set button_text = 'remove category' %}
+                                    {% else %}
+                                        {% set button_text = 'reapply category' %}
+                                    {% endif %}
+                                    <button onclick="toggleVisibilityOf( {{ category.id }}, 'category')"> {{ button_text }} </button>
                                 {% endif %}
                             {% endfor %}
+                            <form onsubmit="checkCategory(event, {{ restaurant.id }})">
+                                <input type="text" name="new_category">
+                                <button> add new category </button>
+                            </form>   
                         </ul>
                     </li>
                 </ul>
@@ -41,6 +51,46 @@
             </li>
         {% endfor %}
     </ul>
+
+    <script>
+    const checkCategory = (event, restaurant_id) => {
+        event.preventDefault(); // prevent default submitting
+
+        const form = event.currentTarget
+        const newCategory = form.new_category.value
+
+        if (newCategory === '') {
+            alert("Come on, give me something to work with, will ya?")
+            return false;
+        } else {
+            fetch(`/add-category/${restaurant_id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ new_category: newCategory })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') { // I passed 'status:ok' as JSON from app.py c:
+                    const successMessage = document.createElement("p")
+                    successMessage.style.color = 'green';
+                    successMessage.textContent = `Category "${newCategory}" added to database. Refresh if you want to see the new addition above.`;
+                    form.appendChild(successMessage);
+
+                    form.new_category.value = ''; // Reset the input field
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            return false; // Return false to stop submission
+        }
+    }
+</script>
     
     <h2> add a restaurant: </h2>
     <p>
@@ -89,15 +139,20 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('data:',data)
-                    
-                    const successMessage = document.createElement("p") // create a success message paragraph
-                    successMessage.style.color = 'green'
-                    successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
-                    form.appendChild(successMessage)
+                    //console.log('data:',data)
+                    if (data.status = 'ok') {
+                        const successMessage = document.createElement("p") // create a success message paragraph
+                        successMessage.style.color = 'green'
+                        successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
+                        form.appendChild(successMessage)
 
-                    form.restaurant_name.value = ''
-                    form.address.value = ''             // reset fields in case admin wants to add another right away
+                        form.restaurant_name.value = ''
+                        form.address.value = ''             // reset fields in case admin wants to add another right away
+                    } else {
+                        
+                    }
+                    
+                    
                 })
                 .catch(error => console.error(error))  
             }  
@@ -109,8 +164,8 @@
         {% for user in users %}
             <li>
                 <p> username: {{ user.username }} </p>
-                <p> is admin: {{ user.is_admin}} </p>
-                <p>email: {{ user.email}} </p>
+                <p> is admin: {{ user.is_admin }} </p>
+                <p> email: {{ user.email }} </p>
             </li>
         {% endfor %}
     </ul>

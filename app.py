@@ -21,9 +21,22 @@ env.add_extension('jinja2.ext.loopcontrols')
 def index():
     return render_template('index.jinja')
 
+@app.route('/add-category/<int:restaurant_id>', methods=["POST"])
+def add_category(restaurant_id):
+    data = request.get_json()
+    category = data.get('new_category')
+    sql = text('INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (:restaurant_id,:category,TRUE);')
+    try:
+        db.session.execute(sql, {'restaurant_id':restaurant_id, 'category':category})
+        db.session.commit()
+        return jsonify({'status':'ok', 'message':'added category'}), 201 # 201 Created = created new resource successfully
+    except Exception as e:
+        print("Error while trying to add a new category:",e)
+        return jsonify({'status':'error', 'message':str(e)}), 500
+    
 @app.route('/api/get-categories/<int:restaurant_id>')
 def get_categories_by_restaurant_id(restaurant_id):
-    sql = text('SELECT * FROM restaurant_categories WHERE restaurant_id = :restaurant_id')
+    sql = text('SELECT * FROM restaurant_categories WHERE restaurant_id = :restaurant_id AND category_visible')
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     rows = result.fetchall()
     list_of_db_categories = [{'restaurant_id':row.restaurant_id, 'category':row.category, 'category_visible':row.category_visible} for row in rows]
@@ -104,7 +117,6 @@ def update_name_and_address():
         print("Error updating restaurant:", e)
         return jsonify({'status': 'error', 'message': str(e)}), 500     # error code 500, server error
 
-
 @app.route('/api/add-restaurant', methods=["POST"])
 def add_a_restaurant():
 
@@ -119,8 +131,29 @@ def add_a_restaurant():
     ''')
     result = db.session.execute(sql, {'restaurant_name':restaurant_name, 'address':address})
     db.session.commit()
-    response = jsonify({'status': 'success', 'message': 'restaurant added'})
+    response = jsonify({'status': 'ok', 'message': 'restaurant added'})
     return response # this just returns this json back to where the fetch (post) was done! c: cool
+
+@app.route('/api/toggle-visibility-of-category/<int:category_id>')
+def toggle_visibility_of_category(category_id):
+    sql = text('''SELECT * FROM restaurant_categories WHERE id=:category_id''') 
+    result = db.session.execute(sql, {'category_id':category_id})
+    row = result.fetchone()
+    category_object = {'category_id':row.id, 'category':row.category, 'category_visible':row.category_visible}
+    if category_object["category_visible"]:
+        sql = text('''UPDATE restaurant_categories SET category_visible=FALSE WHERE id=:category_id''')    # UPDATE doesn't return any rows!
+    else:
+        sql = text('''UPDATE restaurant_categories SET category_visible=TRUE WHERE id=:category_id''')     # UPDATE doesn't return any rows!
+    db.session.execute(sql, {'category_id':category_id})
+    db.session.commit()
+
+    sql = text('''SELECT * FROM restaurant_categories WHERE id=:category_id''')
+    result = db.session.execute(sql, {'category_id':category_id})
+    # print("result:", get_result)
+    row = result.fetchone()
+    # print("\nrestaurant_categories:", row)
+    category_object = {'category_id':row.id, 'category':row.category, 'category_visible':row.category_visible}
+    return jsonify(category_object)
 
 @app.route('/api/toggle-visibility-of-restaurant/<int:restaurant_id>')
 def toggle_visibility_of_restaurant(restaurant_id):
@@ -339,7 +372,7 @@ def restaurants():
 @app.route("/login", methods=["POST"])
 def login():
     username = request.form['username']
-    password = str(request.form['password']) # if the input password is just numbers...?
+    password = request.form['password']
 
     sql = text('SELECT username, password FROM users WHERE username=:username') # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
     result = db.session.execute(sql, {"username":username, "password":password})  # HASHED pw into db

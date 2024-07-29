@@ -28,7 +28,7 @@ INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Sotto Pizza & Bar Käpylä', 'Mäkelänkatu 87 00610 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Old Sophie', 'Koskelantie 9 00610 Helsinki', FALSE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('CoolHead Brew / CoolHead Taproom', 'Gardenia Päärakennus Koetilantie 1 00790 Helsinki', TRUE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('CoolHead Brew / CoolHead Taproom', 'Gardenia Päärakennus Koetilantie 1 00790 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Harju 8', 'Harjutori 8 00500 Helsinki Finland', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Platinum Lounge', 'Areenankuja 1 00240 Helsinki Finland', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Kahvila Aurinko', 'Jyrängöntie 2 00560 Helsinki Finland', FALSE);
@@ -36,7 +36,7 @@ INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Oljenkorsi / Olutravintola Oljenkorsi', 'Intiankatu 18 00560 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Tandoori Villa Metsälä', 'Niittyläntie 2 00620 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Jano / Olutravintola Jano', 'Mäkitorpantie 11 00620 Helsinki', FALSE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Cafe Amore', 'Oulunkyläntie 7 00600 Helsinki', TRUE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Cafe Amore', 'Oulunkyläntie 7 00600 Helsinki', FALSE);
 
 -- this will include descriptions fetched from Google Places API, AND stuff that admin can add
 CREATE TABLE restaurant_categories (
