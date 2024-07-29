@@ -8,8 +8,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 
 their own reviews, including a comment and a rating/5.
 ## TO-DO:
-- clean-up
-- search functions: lowercase in 'index.js'
+- refactor and clean-up
 
 ## Done
 - [x] add info, opening hours and sql-database-based ratings /5 to each custom location on the map
@@ -22,6 +21,7 @@ their own reviews, including a comment and a rating/5.
 - [x] restaurant categories are stored in DB, fetched from DB, using both admin-managed custom categories and descriptions fetched from the Places API
 - [x] admin can toggle the visibility of each category (like 'asian' or 'thai') for each restaurant (i.e., admin can remove and reapply descriptions of each restaurant)
 - [x] admin can add new categories for restaurants (like "thai", "cafe", "bar", etc.)
+- [x] search functions: lowercase queries first in 'map.jinja'
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.

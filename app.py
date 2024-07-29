@@ -360,14 +360,13 @@ def get_restaurants_json():
     restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible,} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
     return jsonify(restaurants_list)
 
-@app.route('/restaurants')
+@app.route('/map')
 def restaurants():
     sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
     restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
     return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
-    # return render_template('restaurants.html', restaurants=restaurants)         # a simple view copy from google maps with restaurants chosen ("share or embed the map"; "jaa tai upota kartta" in Google Maps); 'iframe' is the name of the html element
 
 @app.route("/login", methods=["POST"])
 def login():
