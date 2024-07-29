@@ -6,7 +6,6 @@ on the Google map based on Places API query that includes the name and address g
 The admin can add new places on the map by querying based on a rough name and a rough address, hide existing places, as well as add and remove descriptions ("categories") of the places. The admin can delete reviews by rendering them invisible to others (we don't want to permanently delete the evidence c;). The admin can also delete comments by rendering them invisible. Deleting comments and reviews (non-permanently) can be done independently of each other. Hidden (non-permanently 'removed') ratings are ignored in calculation of grade average for a place.
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map. The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
-their own reviews, including a comment and a rating/5.
 ## TO-DO:
 - refactor and clean-up
 
@@ -22,17 +21,18 @@ their own reviews, including a comment and a rating/5.
 - [x] admin can toggle the visibility of each category (like 'asian' or 'thai') for each restaurant (i.e., admin can remove and reapply descriptions of each restaurant)
 - [x] admin can add new categories for restaurants (like "thai", "cafe", "bar", etc.)
 - [x] search functions: lowercase queries first in 'map.jinja'
+- [x] "layout.jinja" to use as a template for all the pages (except the error page, too distracting there)
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
 
 ## SQL tables
 See schema.sql
-- users         id      username (uniq.)    password            is_admin            email               
-- restaurants   id      restaurant_name     street address      restaurant_visible
-- ratings       id      restaurant_id       user_id             comment_id          rating (0...5)  created_at  rating_visible
-- comments      id      user_id             restaurant_id       comment             visible         created_at
-- restaurant_categories id  restaurant_id   category            category_visible
+- users:         id      username (uniq.)    password            is_admin            email               
+- restaurants:   id      restaurant_name     street address      restaurant_visible
+- ratings:       id      restaurant_id       user_id             comment_id          rating (0...5)  created_at  rating_visible
+- comments:      id      user_id             restaurant_id       comment             visible         created_at
+- restaurant_categories: id  restaurant_id   category            category_visible
 
 ## WIP: premature manual (planning)
 ### AFTER GIT CLONING:

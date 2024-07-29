@@ -1,9 +1,13 @@
+{% extends "layout.jinja" %}
+{% block title %} Home {% endblock %}
+{% block content %}
+
 <head>
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" />
 </head>
 
 {% if session.username %}
-    <p> Logged in with name {{ session.username }} </p>
+    <p> Logged in as '<b><em>{{ session.username }}</em></b>' </p>
     <a href="/"> Home </a>
     <br>
     <a href="/logout"> Log out </a>
@@ -15,7 +19,7 @@
 
 {% else %}
     <p> Login </p>
-    <form action="/login" method="POST">
+    <form action="/login" method="POST" onsubmit="return check(this)">
         <p> username: <br>
             <input type="text" name="username"> </p>
         <p> password: <br>
@@ -23,9 +27,21 @@
         {# <input type="submit" value="log in"> <!-- this works as a button, but since I'd like to use the css for <button> instead, I'm using button below --> #}
         <button> log in </button>
     </form>
-    <p> Create an account:</p>
-    <a href="/register"> new account</a>
+    <script>
+        const check = form => {
+            const username = form.username.value
+            const password = form.password.value
+            if(!username) {
+                alert("please enter a username")
+                return false
+            } else if (!password) {
+                alert("please enter a password")
+                return false
+            }
+                
+        }
+    </script>
+    
 {% endif %}
-<br>
-<p> See restaurants: </p>
-<a href="/map">see restaurants</a>
+
+{% endblock %}

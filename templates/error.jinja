@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>dinerapp - wrong</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed for getting the url that Flask is handling-->
+    </head>
+    <body>
+        <br><a href="/">home</a>
+        <p> {{ message }} </p>
+
+        <div>
+            <button onclick="window.history.back();"> back </button>
+            
+        </div>
+    </body>
+</html>

@@ -1,15 +1,10 @@
-<html>
-  <head>
-    <title>Add Map</title>
+{% extends "layout.jinja" %}
+{% block title %} Map {% endblock %}
+{% block more_css %} 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- star rating thingy --> 
+{% endblock %}
+{% block content %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed to get the url that Flask is handling-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- star rating thingy -->
-    
-    <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            <!-- index.js has the actual logic for map -->
-  </head>
-  <body>
-
-    <a href="/"> back to home</a>
     
     <div id="map-search-name"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
         <h3> name search from places on the map </h3>
@@ -69,7 +64,7 @@
         </script>
     </div>
     
-    <!--The div element for the map --> <!-- this comment, on the left, was here originally, from the Google API isntructions c: -->
+    <!--The div element for the map --> <!-- MAP HERE!! This comment, on the left, was here originally, from the Google API isntructions c: -->
     <div id="map"></div>                <!-- height 100% etc, see style.css. NB! You CAN NOT change the name of this id, or the map (from index.js) will not load into this div at all! (see index.js 'map = new Map(document.getElementById("map")') -->
 
     <div id="search-function"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
@@ -99,9 +94,6 @@
                         
                     })
                 })
-                //const averages = infoElements.querySelectorAll('#average-element')
-                //const addresses = infoElements.querySelectorAll('#address-element')
-                
             }           
             
         </script>
@@ -114,12 +106,12 @@
 
                 import filterRatingsForRestaurantId from '../static/filterRatingsForRestaurantId.js'
 
-                const placeId_placeInfo = []  // meaning of name 'placeId_place_Info': array of JSONs: [ {id: {...}}, ... ]. Each JSON shall have properties 'id', 'name', 'average', 'nRatings' and 'average' (nRatings = number of ratings)
+                const placeId_placeInfo = []                        // array of JSONs: [ {id: {...}}, ... ]. Each JSON shall have properties 'id', 'name', 'average', 'nRatings' and 'average' (nRatings = number of ratings)
 
                 let infoHTML = document.createElement('ul')         // this infoHTML will be added to on every loop of .map below
                 infoHTML.id = 'infoHTML'
-                const restaurants = {{ restaurants | tojson }} // if this shows red (linting error): install "betterJinja" from Extensions (in VSCode). That gets rid of the red underlining. However, then you have to rename .html files as .jinja. Or somehow fix that.
-                console.log('restaurants:', restaurants) // restaurants: [{"address": "Hämeentie 153, 00560 Helsinki", "id": 1, "restaurant_name": "Krung Thep Thai Bistro Arabia", "restaurant_visible": true}, {"address": "Koskelantie 56, 00610 Helsinki", "id": 2, "restaurant_name": "Thai Ravintola Meelom Oy", "restaurant_visible": true}, {"address": "laurintie vantaa", "id": 3, "restaurant_name": "pizzeria toli", "restaurant_visible": true}, {"address": "ilola", "id": 4, "restaurant_name": "hesburger ilola", "restaurant_visible": true}, {"address": "kumpula", "id": 9, "restaurant_name": "kaljaravintola oljenkorsi", "restaurant_visible": true}, {"address": "kumpula", "id": 10, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 11, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 12, "restaurant_name": "iso paja", "restaurant_visible": true}]
+                const restaurants = {{ restaurants | tojson }}      // if this shows red (linting error): install "betterJinja" from Extensions (in VSCode). That gets rid of the red underlining. However, then you have to rename .html files as .jinja. Or somehow fix that.
+                console.log('restaurants:', restaurants)            // restaurants: [{"address": "Hämeentie 153, 00560 Helsinki", "id": 1, "restaurant_name": "Krung Thep Thai Bistro Arabia", "restaurant_visible": true}, {"address": "Koskelantie 56, 00610 Helsinki", "id": 2, "restaurant_name": "Thai Ravintola Meelom Oy", "restaurant_visible": true}, {"address": "laurintie vantaa", "id": 3, "restaurant_name": "pizzeria toli", "restaurant_visible": true}, {"address": "ilola", "id": 4, "restaurant_name": "hesburger ilola", "restaurant_visible": true}, {"address": "kumpula", "id": 9, "restaurant_name": "kaljaravintola oljenkorsi", "restaurant_visible": true}, {"address": "kumpula", "id": 10, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 11, "restaurant_name": "ravintola nyyrikki", "restaurant_visible": true}, {"address": "kumpula", "id": 12, "restaurant_name": "iso paja", "restaurant_visible": true}]
 
                 const promises = restaurants.map(async restaurant => {  // all these Promises (because 'async'!) are functions; this .map gathers them inside a list.
 
@@ -177,6 +169,7 @@
     </div>
 
     <!-- prettier-ignore -->
+    <!-- NB! This below is from Google Places API instructions - no idea what all the things here do! This is needed for the map! -->
     <script>(g=>{
         var h,a,k,p="The Google Maps JavaScript API",
         c="google",
@@ -202,6 +195,9 @@
         d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))
     })
         ({key: "{{ key }}", v: "weekly"});
-    </script> <!-- note the "{{ key }} above!"; this is of course Jinja syntax to pass the Google Cloud API key passed from app.py (through the render_template). -->
-  </body>
-</html>
+    </script> <!-- note the "{{ key }} above!"; this is normal Jinja syntax to pass the Google Cloud API key passed here from app.py (through the render_template). -->
+    
+    <!-- NB! My actual map JS is loaded here: -->
+    <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            
+    <!-- Above, I load 'index.js' to be run. It has all the actual logic for the map. I thought it might be a bit faster to load this big js here below the actual (?) map script above, but it doesn't seem to matter regarding the loading time of the page for the user. -->
+{% endblock %}

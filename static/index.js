@@ -12,12 +12,12 @@ async function initMap(apiServices, starRating) {
   console.log(`user: "${user}"`)
 
   // ratings, for checking
-  const ratings = await apiServices.getAll('/api/ratings')
-  console.log("ratings:", ratings)
+  // const ratings = await apiServices.getAll('/api/ratings')
+  // console.log("ratings:", ratings)
 
   // comments, for checking
-  const comments = await apiServices.getAll('/api/comments')
-  console.log("comments:", comments)
+  // const comments = await apiServices.getAll('/api/comments')
+  // console.log("comments:", comments)
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
@@ -218,31 +218,24 @@ async function initMap(apiServices, starRating) {
               'restaurant_name': placeDetails.name,
               'address': place.formatted_address,
               'descriptions':sensible_descriptions
+            }
+            
+            try {
+              const response = await apiServices.post('/api/update-name-address-categories', body)
+              const data = await response.json();
+          
+              if (response.ok) {
+                let updatedOrNot
+                data.updated === ''
+                  ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
+                  :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
+                console.log(updatedOrNot, data);
+              } else {
+                console.error('Update failed:', data);
               }
-            
-              try {
-                const response = await fetch('/api/update-name-address-categories', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(body)
-                });
-            
-                const data = await response.json();
-            
-                if (response.ok) {
-                  let updatedOrNot
-                  data.updated === ''
-                    ?  updatedOrNot = 'Database was already up to date: no name, address or category updates were done in db.'
-                    :  updatedOrNot = 'UPDATED database successfully as follows:'
-                  console.log(updatedOrNot, data);
-                } else {
-                  console.error('Update failed:', data);
-                }
-              } catch (error) {
-                console.error('Error:', error);
-              }
+            } catch (error) {
+              console.error('Error:', error);
+            }
 
             const infowindow = new google.maps.InfoWindow({
               content: infoWindowContent,
@@ -300,13 +293,7 @@ async function initMap(apiServices, starRating) {
                       document.querySelector('#feedback-sent').style.display='inline-block'
                       document.querySelector('#feedback-text').value='' // reset the text field. It's hidden anyway, thus doesn't really matter 
                       
-                      const response = await fetch('/api/feedback/', {
-                        method:'POST',
-                        headers:{
-                          'Content-Type':'application/json'
-                        },
-                        body:JSON.stringify(body)
-                      })
+                      const response = await apiServices.post('/api/feedback/', body)
                       const data = await response.json()
                       console.log({data})
                   }

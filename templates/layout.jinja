@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed for getting the url that Flask is handling-->
+        {% block more_css %}  {% endblock  %} <!-- Why this exists: it's best to put all style css -->
+        <title> dinerapp - {% block title %} {% endblock %}</title>
+    </head>
+    <body>
+        <h1> DinerApp </h1>
+        <a href="/">home</a> |
+        <a href="/register"> new account</a> |
+        <a href="/map">restaurants</a>
+        {% if session.username %}
+            | <a href="/logout"> log out</a>
+            {% if session.username == 'admin'%}
+                | <a href="/admin"> admin </a>
+            {% endif %}
+        {% endif %}
+        <hr>
+        {% block content%} {% endblock %}
+        <hr>
+        <p>
+            Ad Hoccer Apps
+            ~~est.1696
+        </p>
+    </body>
+</html>

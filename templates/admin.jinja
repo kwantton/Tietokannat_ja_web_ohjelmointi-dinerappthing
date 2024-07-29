@@ -1,8 +1,8 @@
 <!-- the whole admin page content shall be shown only if 'admin' is logged-in. NB! It is made possible in 'app.py' to make a username 'admin' in ALL cases, whether 'admin' is in db or not, and whether 'admin' even exists at all or not (admin is NOT in db, btw, admin password is only set as env.var, as you can see in 'app.py') -->
-<a href="/"> back to home </a>
-<head>
-    <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" />
-</head>
+{% extends "layout.jinja" %}
+{% block title %} admin {% endblock %}
+{% block content %}
+
 {% if session.username == 'admin' %}
 
     <script>
@@ -12,7 +12,7 @@
             .then(response => response.json())
             .then(data => {
                 console.log("data after updating id:", data)
-                window.location.reload()        // I'm reloading the page with my superpowers!
+                window.location.reload()        // I'm refreshing the page with my superpowers! An alternative would be to manually add the new information as a new HTML element, and then also add all the buttons and whatnot to that according to the situation, but that would be too much work here, require a lotta functions etc. This is not React (unfortunately)
             })
         }
     </script>
@@ -28,7 +28,7 @@
                     <li> address: {{ restaurant.address }}</li>
                     <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
                     <li> categories
-                        <ul id="categories-{{ restaurant.id }}"> <!-- I can add to this list the new item -->
+                        <ul id="categories-{{ restaurant.id }}"> <!-- I could add to this list the new item. But nah, then it wouldn't have an associated button, or its functions... -->
                             {% for category in restaurant_categories %}
                                 {% if category.restaurant_id == restaurant.id %} <!-- I forgot I can just use Python here :D -->
                                     <li class="colored"> {{ category.category }}, visible: {{ category.category_visible }} </li>
@@ -40,7 +40,7 @@
                                     <button onclick="toggleVisibilityOf( {{ category.id }}, 'category')"> {{ button_text }} </button>
                                 {% endif %}
                             {% endfor %}
-                            <form onsubmit="checkCategory(event, {{ restaurant.id }})">
+                            <form id="new-category" data-restaurant_id="{{ restaurant.id }}">
                                 <input type="text" name="new_category">
                                 <button> add new category </button>
                             </form>   
@@ -48,54 +48,52 @@
                     </li>
                 </ul>
                 {% if restaurant.restaurant_visible%}
-                    <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> hide restaurant from users </button>
+                    <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> hide place from users </button>
                 {% else %}
-                    <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> show restaurant to users </button>
+                    <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> show place to users </button>
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
 
-    <script>
-    const checkCategory = (event, restaurant_id) => {
-        event.preventDefault(); // prevent default submitting
+    <script type="module"> // you have to always write ' type="module" ' if you import anything in <script>. The side effect of this type="module" is (as I just learned from Chat GPT, thanks AI!) that none of the functions (and other variables) defined in this 'module' <script> in question are no longer global - no longer accessible elsewhere, where I would want to actually use them! (I'd like to use the function checkCategory on form.onSubmit); therefore, I could no longer refer to the function checkCategory below UNLESS I assign it to the window object.
+        import apiServices from '../static/apiServices.js'
 
-        const form = event.currentTarget
-        const newCategory = form.new_category.value
+        document.querySelector('#new-category').addEventListener('submit', event => {
+            event.preventDefault(); // prevent default submitting
 
-        if (newCategory === '') {
-            alert("Come on, give me something to work with, will ya?")
-            return false;
-        } else {
-            fetch(`/add-category/${restaurant_id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ new_category: newCategory })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') { // I passed 'status:ok' as JSON from app.py c:
-                    const successMessage = document.createElement("p")
-                    successMessage.style.color = 'green';
-                    successMessage.textContent = `Category "${newCategory}" added to database. Refresh if you want to see the new addition above.`;
-                    form.appendChild(successMessage);
+            const form = event.currentTarget
+            const newCategory = form.new_category.value
+            const restaurant_id = form.dataset.restaurant_id                    // 1st way of doing it
+            // const restaurant_id = form.getAttribute('data-restaurant_id')    // 2nd way. Both do the same! c: (I tried both out)
 
-                    form.new_category.value = ''; // Reset the input field
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+            if (newCategory === '') {
+                alert("Come on, give me something to work with, will ya?")
+                return false;
+            } else {
+                apiServices.post(`/add-category/${restaurant_id}`, { new_category: newCategory }) // NB! apiServices.post uses async-await. Normally you would never mix .then (below) and async-await (apiServices.post), but I don't feel like rewriting the below again c:
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') { // I passed 'status:ok' as JSON from app.py c:
+                        const successMessage = document.createElement("p")
+                        successMessage.style.color = 'green';
+                        successMessage.textContent = `Category "${newCategory}" added to database. Refresh if you want to see the new addition above.`;
+                        form.appendChild(successMessage);
 
-            return false; // Return false to stop submission
-        }
-    }
-</script>
-    
+                        form.new_category.value = ''; // Reset the input field
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+                return false; // Return false to stop submission
+            }
+        })
+         // NB! This magic "window.checkCategory" trick assigns this function checkCategory to the "window" element of the "document" (i.e. the the HTML page). Thanks to this trick, this checkCategory is now available everywhere. Without this, it wouldn't be available everywhere on the HTML page since 'type = module' makes all variables within this script unaccessible elsewhere without separate exporting. At the same time, type = module is needed for importing apiServices
+    </script>
+
     <h2> add a restaurant: </h2>
     <p>
     NB! It is not necessary to provide the exact name or address in the search below:
@@ -105,62 +103,48 @@
     in 'index.js': they will be updated in the db once you go to the map at '/restaurants'; as the API is used there ('index.js'),
     the db will be updated at the same time. 
     ((sidenote: the list below the map will have the updated names on the 2nd run (1st refresh) at '/restaurants'.))
-    
+
     For example: 'iso paja', 'kumpula' will successfully locate 'Ravintola Iso Paja' at address 
     'Radiokatu 3, 00240 Helsinki, Finland' - NOTABLY! - even though its location is somewhat far from actual 'Kumpula'. 
     The correct info will be shown in the map to the users regardless.
     </p>
 
-    <form onsubmit="checkFields(event)">
-        
+    <form id="new-restaurant">
         <p> restaurant name
             <input type="text" name="restaurant_name" > </p>
         <p> restaurant address
             <input type="text" name="address"> </p>
-        
         <button>add restaurant</button> <!-- when a button is in a form, by default it submits-->
     </form>
 
-    <script> 
-        const checkFields = event => {
+    <script type="module"> 
+        import apiServices from '../static/apiServices.js'
+        document.querySelector("#new-restaurant").addEventListener('submit', event => { // what I had done previously (not safe): onSubmit = checkFields, and attaching checkFields itslef to 'window' object so that checkFields is accessible for the above form that uses it. HOWEVER! Checkfields would then be also available in the browser through window.checkFields. So, instead I used the documentQuerySelector to get rid of this problem. An alternative would have been to define the function from apiServices again at the top of the page in a <script>, or to just... not use that at all c:
             event.preventDefault() // otherwise the page will automatically reload, and none of the things below will ever happen c:
             const form = event.currentTarget
             if (form.restaurant_name.value === '' || form.address.value === '') {
                 alert("provide both an (approximate) name and a (approximate) address, or the maps api could find the wrong place!")
             } else {
-                // reset the 'name' and 'address' -fields, and show a message that claims that the operation was successful. Note; this doesn't actually check if the operation was successful really; would need to make a call to db to see if the restaurant was really added. An alternative is to refresh the page after the posting, so you can directly see if it worked c:
                 const body = {
                     restaurant_name:form.restaurant_name.value,
                     address:form.address.value
                 }
-
-                fetch('/api/add-restaurant', {
-                    method:'POST',
-                    headers: {
-                        'Content-Type':'application/json'
-                    },
-                    body:JSON.stringify(body)
-                })
+                apiServices.post('/api/add-restaurant', body)
                 .then(response => response.json())
                 .then(data => {
-                    //console.log('data:',data)
+                    // reset the 'name' and 'address' -fields, and show a message that the operation was successful
                     if (data.status = 'ok') {
                         const successMessage = document.createElement("p") // create a success message paragraph
                         successMessage.style.color = 'green'
                         successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
                         form.appendChild(successMessage)
-
                         form.restaurant_name.value = ''
                         form.address.value = ''             // reset fields in case admin wants to add another right away
-                    } else {
-
-                    }
-                    
-                    
+                    } 
                 })
                 .catch(error => console.error(error))  
             }  
-        }   
+        })
     </script>
 
     <h2>users</h2>
@@ -191,7 +175,8 @@
     </ul>
     
     <!-- coloring <li> lines red if FALSE, green if TRUE -->
-    <script>document.querySelectorAll('.colored').forEach(li => {
+    <script>
+    document.querySelectorAll('.colored').forEach(li => {
         if (li.innerText.includes('True')) {
             li.style.color='green'
             li.style.fontWeight='bold'
@@ -199,7 +184,10 @@
             li.style.color='red'
             li.style.fontWeight='bold'
         }
-    })</script>
+    })
+    </script>
+    
 {% else %}
     <p>You are not logged in as the administrator. You seem sus.</p>
 {% endif %}
+{% endblock %}
