@@ -11,7 +11,6 @@ their own reviews, including a comment and a rating/5.
 - admin can create groups for restaurants based on properties, like "thai", "cafe", etc.
 - categories to DB
 - clean-up
-- it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
 
 ## Done
 - add info, opening hours and sql-database-based ratings /5 to each location on the map
@@ -20,13 +19,17 @@ their own reviews, including a comment and a rating/5.
 - restaurant search (textbox search based on name or description)
 - rating list; top restaurants
 - a user can search restaurants from the SQL database based on words of the desription / name
+- add timestamps after comments and ratings
+
+## No time to do
+- it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
 
 ## SQL tables
 See schema.sql
-- users         id      username (uniq.)    password            email               
-- restaurants   id      restaurant_name     street address
-- ratings       id      restaurant_id       user_id             rating (0...5)      # many of these -> average
-- comments      id      user_id             restaurant_id       comment
+- users         id      username (uniq.)    password            is_admin            email               
+- restaurants   id      restaurant_name     street address      restaurant_visible
+- ratings       id      restaurant_id       user_id             comment_id          rating (0...5)  created_at  rating_visible
+- comments      id      user_id             restaurant_id       comment             visible         created_at
 
 ## WIP: premature manual (planning)
 ### AFTER GIT CLONING:

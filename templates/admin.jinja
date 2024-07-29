@@ -20,14 +20,22 @@
     <h1> Welcome ! </h1>
     <p><em>Welcome, o dear admin!</em></p>
     <h2>restaurants</h2>    
-    
+
     <ul>
         {% for restaurant in restaurants %}
             <li>  <p>{{ restaurant.restaurant_name }}</p>
                 <ul>
-                    
                     <li> address: {{ restaurant.address }}</li>
                     <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
+                    <li> categories
+                        <ul id="categories">
+                            {% for category in restaurant_categories %}
+                                {% if category.restaurant_id == restaurant.id %} <!-- I forgot I can just use Python here :D -->
+                                    <li> {{ category.category }} </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </li>
                 </ul>
                 <button onclick="toggleVisibilityOf( {{ restaurant.id }}, 'restaurant' )"> toggle restaurant visibility to users </button>
             </li>

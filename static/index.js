@@ -130,6 +130,8 @@ async function initMap(apiServices, starRating) {
             const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
             const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
             let starRatingHTML
+            
+            
             filtered_ratings_for_restaurant.length !== 0
               ? starRatingHTML = starRating(rating_average)
               : starRatingHTML = ''
@@ -140,7 +142,7 @@ async function initMap(apiServices, starRating) {
                   <p>
                     "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
                     ${item.rating_visible ? `${item.rating}/5` : '~~rating removed~~'} <br>
-                    (by username "${item.username}")
+                    (by username "${item.username}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
                   </p>
                 </li>`).join('') + '</ul>'
               : commentHTML = '<p>no comments yet</p>'    

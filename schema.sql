@@ -16,26 +16,55 @@ CREATE TABLE restaurants (
     restaurant_visible BOOLEAN
 );
 
+-- BY DEFAULT, I'm showing (restaurant_visible=TRUE) only 1 diner, 1 bar and 1 cafe. This is to prevent fetching 20 restaurants through the API by default; I don't want my free Cloud credits to run out before I can even deploy the app online, lol
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Krung Thep Thai Bistro Arabia', 'Hämeentie 153, 00560 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Egyptiläinen ravintola El Karim', 'Koskelantie 52, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Käpygrilli', 'Osmontie 5, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Hesburger Käpylä Drive-In', 'Vähänkyröntie 2, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Nyyrikki', 'Pohjolankatu 2, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Iso Paja', 'Radiokatu 3, 00240 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Burger King', 'Vähänkyröntie 2, 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Sotto Pizza & Bar Käpylä', 'Mäkelänkatu 87 00610 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Old Sophie', 'Koskelantie 9 00610 Helsinki', TRUE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Egyptiläinen ravintola El Karim', 'Koskelantie 52, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Käpygrilli', 'Osmontie 5, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Hesburger Käpylä Drive-In', 'Vähänkyröntie 2, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Nyyrikki', 'Pohjolankatu 2, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Iso Paja', 'Radiokatu 3, 00240 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Burger King', 'Vähänkyröntie 2, 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Manse Seor Cafe', 'Intiankatu 33 00560 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Sotto Pizza & Bar Käpylä', 'Mäkelänkatu 87 00610 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Old Sophie', 'Koskelantie 9 00610 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('CoolHead Brew / CoolHead Taproom', 'Gardenia Päärakennus Koetilantie 1 00790 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Harju 8', 'Harjutori 8 00500 Helsinki Finland', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Platinum Lounge', 'Areenankuja 1 00240 Helsinki Finland', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Kahvila Aurinko', 'Jyrängöntie 2 00560 Helsinki Finland', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Frangipani Bakery & Café', 'Intiankatu 25 00560 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Oljenkorsi / Olutravintola Oljenkorsi', 'Intiankatu 18 00560 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Tandoori Villa Metsälä', 'Niittyläntie 2 00620 Helsinki', TRUE);
-INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Jano / Olutravintola Jano', 'Mäkitorpantie 11 00620 Helsinki', TRUE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Harju 8', 'Harjutori 8 00500 Helsinki Finland', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Platinum Lounge', 'Areenankuja 1 00240 Helsinki Finland', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Kahvila Aurinko', 'Jyrängöntie 2 00560 Helsinki Finland', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Frangipani Bakery & Café', 'Intiankatu 25 00560 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Oljenkorsi / Olutravintola Oljenkorsi', 'Intiankatu 18 00560 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Ravintola Tandoori Villa Metsälä', 'Niittyläntie 2 00620 Helsinki', FALSE);
+INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Jano / Olutravintola Jano', 'Mäkitorpantie 11 00620 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Cafe Amore', 'Oulunkyläntie 7 00600 Helsinki', TRUE);
+
+-- this will include descriptions fetched from Google Places API, AND stuff that admin can add
+CREATE TABLE restaurant_categories (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES restaurants (id),
+    category TEXT NOT NULL,
+    category_visible BOOLEAN
+);
+
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'thailand',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'thaimaa',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (1,'oriental',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'thailand',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'thaimaa',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (2,'oriental',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (3,'egyptian',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (3,'egypti',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'grilli',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'fried',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (4,'paistettu',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'burger',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'suomi',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (5,'finland',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (8,'burger',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (14,'lounge',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (18,'indian',TRUE);
+INSERT INTO restaurant_categories (restaurant_id, category, category_visible) VALUES (18,'tandoori',TRUE);
+
 
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY, 

@@ -32,7 +32,7 @@ def update_name_and_address():
         restaurant_id = data.get('restaurant_id')
         print("\tid:", restaurant_id)
 
-        # Verify the restaurant exists
+        # check if the restaurant exists in the db
         test_sql = text('SELECT * FROM restaurants WHERE id=:id')
         rows = db.session.execute(test_sql, {'id': restaurant_id})
         test_result = rows.fetchall()
@@ -40,21 +40,21 @@ def update_name_and_address():
 
         if not test_result:
             print("\tNo restaurant found with the given ID")
-            return jsonify({'status': 'error', 'message': 'Restaurant not found'}), 404
+            return jsonify({'status': 'error', 'message': 'Restaurant not found'}), 404 # this would then be shown in the browser console
 
         existing_restaurant = test_result[0]
         print("\texisting_restaurant:", existing_restaurant)
 
-        # Check if data is actually different
+        # check if the data is actually different. I was initially accidentally trying to update with the same name and address and was wondering why nothing was updated - this was the reason...
         if existing_restaurant.restaurant_name == restaurant_name and existing_restaurant.address == address:
-            print("\tNo changes detected")
+            print("\tNo changes - not going to update name or address")
             response = jsonify({'status': 'success', 'message': 'No changes detected'})
             return response
 
         # Log the actual query being executed
         print(f"Executing query: UPDATE restaurants SET restaurant_name='{restaurant_name}', address='{address}' WHERE id={restaurant_id}")
 
-        # Perform the update
+        # Since name and address are different, perform the update
         sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
         result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
         print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected
@@ -70,7 +70,7 @@ def update_name_and_address():
         return response
     except Exception as e:
         print("Error updating restaurant:", e)
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500     # error code 500, server error
 
 
 @app.route('/api/add-restaurant', methods=["POST"])
@@ -176,6 +176,7 @@ def admin():
                     ratings.created_at, 
                     rating, 
                     rating_visible
+
                 FROM 
                     restaurants LEFT JOIN 
                 ratings ON 
@@ -190,13 +191,19 @@ def admin():
     result = db.session.execute(sql)
     ratings_with_comments = result.fetchall()
     ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'rating_id':row.rating_id, 'comment':row.comment, 'comment_visible':row.comment_visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
+    
     sql = text('''SELECT * FROM restaurants;''')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
+
+    sql = text('''SELECT * FROM restaurant_categories;''') # if I were to left join with restaurants here, I'd get a list with the same restaurant a million times, and then I'd have to check if restaurant id matches the category's restaurant_id anyways - instead Imma just check in 'admin.jinja' ONCE for each category whether restaurant.id == category.restaurant_id, much more convenient!
+    result = db.session.execute(sql)
+    restaurant_categories = result.fetchall()
+    
     sql = text('''SELECT * FROM users;''')
     result = db.session.execute(sql)
     users = result.fetchall()
-    return render_template('admin.jinja', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users)
+    return render_template('admin.jinja', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users, restaurant_categories=restaurant_categories)
 
 @app.route('/api/feedback/', methods=["POST"])
 def feedback():
