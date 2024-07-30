@@ -48,13 +48,13 @@
                             {% for category in restaurant_categories %}
                                 {% if category.restaurant_id == restaurant.id %}
                                     {% if category.category_visible %}
-                                        {% set txt = 'hide category' %}
+                                        {% set buttonText = 'hide category' %}
                                     {% else %}
-                                        {% set txt = 'reapply category' %}
+                                        {% set buttonText = 'reapply category' %}
                                     {% endif %}
                                     <li class="colored" id='category-id-{{ category.id }}'> 
-                                        {{ category.category }}, visible: {{ category.category_visible }} 
-                                        <button onclick="toggleVisibilityOf( {{ category.id }}, 'restaurant_categories')"> {{ txt }} </button>
+                                        {{ category.category }}, visible: {{ category.category_visible }} <br>
+                                        <button onclick="toggleVisibilityOf( {{ category.id }}, 'restaurant_categories')"> {{ buttonText }} </button>
                                         <button onclick="deleteCategory( {{ category.id }} )"> delete category </button>
                                     </li>
                                 {% endif %}
