@@ -21,7 +21,18 @@ env.add_extension('jinja2.ext.loopcontrols')
 def index():
     return render_template('index.jinja')
 
-@app.route('/toggle-visibility-of/<table>/<int:id>/') # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
+@app.route('/api/delete-category/<int:category_id>', methods=["DELETE"])
+def delete_category_id(category_id):
+    try:
+        sql = text('DELETE from restaurant_categories WHERE id = :category_id')
+        db.session.execute(sql, {'category_id':category_id})
+        db.session.commit()
+        return jsonify({'status':'ok', 'message':'DELETE ok'})
+    except Exception as e:
+        print("Couldn't DELETE category id for reason",str(e))
+        return jsonify({'status':'ERROR', 'message':"couldn't DELETE, backend sucks"}), 500 # 5.. = server-side error
+
+@app.route('/api/toggle-visibility-of/<table>/<int:id>/') # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
 def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_id, or comment_id
     
     # SECURITY CHECK: prevention of SQL injection (NB! ":table" is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
@@ -44,11 +55,10 @@ def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_
             sql = text(f'UPDATE {table} SET {column_name}=TRUE WHERE id=:id')
         db.session.execute(sql, {'id':id})
         db.session.commit()
-        object = {'status':'ok', 'message':'toggled visibility'}
+        return jsonify({'status':'ok', 'message':'toggled visibility'})
     except Exception as e:
-        print(f"Couldn't toggle visibility of ${table}/${id}. Reason:", str(e)), 500
-        object = {'status':'ERROR', 'message':"couldn't toggle visibility"}
-    return jsonify(object)
+        print(f"Couldn't toggle visibility of ${table}/${id}. Reason:", str(e))
+        return jsonify({'status':'ERROR', 'message':"couldn't toggle visibility"}), 500 # 5.. = server-side error
 
 @app.route('/add-category/<int:restaurant_id>', methods=["POST"])
 def add_category(restaurant_id):
@@ -102,7 +112,7 @@ def update_name_and_address():
             print("\tNo changes - not going to update name or address")
             response = jsonify({'status': 'success', 'message': 'No changes detected'})
         else:
-            # since name and address are different, perform the update
+            # since name and address are different, perform the sql table update
             sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
             result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
             print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected

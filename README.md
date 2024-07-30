@@ -22,6 +22,8 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] admin can add new categories for restaurants (like "thai", "cafe", "bar", etc.)
 - [x] search functions: lowercase queries first in 'map.jinja'
 - [x] "layout.jinja" to use as a template for all the pages (except the error page, too distracting there)
+- [x] major refactorization of visibility toggling in 'app.py', saving about 100 rows of space (repetition out of the window)
+- [x] admin can permanently DELETE categories (in addition to disabling them), and in case of a successful DELETE, the respective category with its associated buttons are "display.style = none"'d -> no need to refresh.
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.

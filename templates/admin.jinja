@@ -5,15 +5,31 @@
 
 {% if session.username == 'admin' %}
 
-    <script>
+    <!-- the beauty of a <script> without type="module" is that now these functions below are available in the whole HTML document with no further hassle. -->
+    <script> 
         const toggleVisibilityOf = (id, target) => {
-            console.log(`toggle visibility for the following target: table '${target}', 'id'`, id)
-            fetch(`/toggle-visibility-of/${target}/${id}`)
+            console.log(`toggle visibility for the following target: table '${target}', id ${id}`)
+            fetch(`/api/toggle-visibility-of/${target}/${id}`)
             .then(response => response.json())
             .then(data => {
                 console.log("data after updating id:", data)
                 window.location.reload()        // I'm refreshing the page with my superpowers! An alternative would be to manually add the new information as a new HTML element... and then also add aaaall the buttons and whatnot to that according to the situation, but that would be too much work here, require a lotta functions etc. This is not React (unfortunately)
             })
+        }
+
+        const deleteCategory = categoryId => {
+            fetch(`/api/delete-category/${categoryId}`, {method:'DELETE'})
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    document.querySelector(`#category-id-${categoryId}`).style.display = 'none' // behold, it's now removed from the site
+                    console.log("deleted successfully:",data)
+                } else {
+                    console.log("ERROR in deletion in backend:",data)
+                }
+                
+                })
+            .catch(error => console.error(error))
         }
     </script>
 
@@ -28,16 +44,19 @@
                     <li> address: {{ restaurant.address }}</li>
                     <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
                     <li> categories
-                        <ul id="categories-{{ restaurant.id }}"> <!-- I could add to this list the new item. But nah, then it wouldn't have an associated button, or its functions... -->
+                        <ul>
                             {% for category in restaurant_categories %}
-                                {% if category.restaurant_id == restaurant.id %} <!-- I forgot I can just use Python here :D -->
-                                    <li class="colored"> {{ category.category }}, visible: {{ category.category_visible }} </li>
+                                {% if category.restaurant_id == restaurant.id %}
                                     {% if category.category_visible %}
-                                        {% set button_text = 'remove category' %}
+                                        {% set txt = 'hide category' %}
                                     {% else %}
-                                        {% set button_text = 'reapply category' %}
+                                        {% set txt = 'reapply category' %}
                                     {% endif %}
-                                    <button onclick="toggleVisibilityOf( {{ category.id }}, 'restaurant_categories')"> {{ button_text }} </button>
+                                    <li class="colored" id='category-id-{{ category.id }}'> 
+                                        {{ category.category }}, visible: {{ category.category_visible }} 
+                                        <button onclick="toggleVisibilityOf( {{ category.id }}, 'restaurant_categories')"> {{ txt }} </button>
+                                        <button onclick="deleteCategory( {{ category.id }} )"> delete category </button>
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                             <form id="new-category" data-restaurant_id="{{ restaurant.id }}">
@@ -73,7 +92,7 @@
                 alert("Come on, give me something to work with, will ya?")
                 return false;
             } else {
-                apiServices.post(`/add-category/${restaurant_id}`, { new_category: newCategory }) // NB! apiServices.post uses async-await. Normally you would never mix .then (below) and async-await (apiServices.post), but I don't feel like rewriting the below again c:
+                apiServices.post(`/add-category/${restaurant_id}`, { new_category: newCategory }) // NB! apiServices.post uses async-await. Normally you would never mix '.then' (used below) and 'async' + 'await' (used in apiServices.post), but I don't feel like rewriting the whole thing below again c: AND! Apparently this works, which is awesome. I asked the almighty ChatGPT if it's ok to mix the two and the answer was yes - and indeed it works. In both cases we're working with Promises after all. A Promise is a Promise!
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'ok') { // I passed 'status:ok' as JSON from app.py c:
@@ -92,10 +111,8 @@
                 });
                 return false; // Return false to stop submission
             }
+            })
         })
-        })
-        
-
     </script>
 
     <h2> add a restaurant: </h2>
@@ -172,9 +189,17 @@
                 {% endfor %}
                 </ul>
             </li>
-            <!-- I'm having VSCode underlined red here below, but it works. So, linting problem. Dunno how to fix.-->
-            <button onclick="toggleVisibilityOf( {{ item.comment_id }}, 'comments' )">toggle comment visibility to users</button> 
-            <button onclick="toggleVisibilityOf( {{ item.rating_id }}, 'ratings')">toggle rating visibility to users</button>
+            {% if item.comment_visible %}
+            <button onclick="toggleVisibilityOf( {{ item.comment_id }}, 'comments' )">hide comment from users</button> 
+            {% else %}
+            <button onclick="toggleVisibilityOf( {{ item.comment_id }}, 'comments' )">show comment to users</button> 
+            {% endif %}
+
+            {% if item.rating_visible %}
+            <button onclick="toggleVisibilityOf( {{ item.rating_id }}, 'ratings')">hide rating from users</button>
+            {% else %}
+            <button onclick="toggleVisibilityOf( {{ item.rating_id }}, 'ratings')">show rating to users</button>
+            {% endif %}
         {% endfor %}
     </ul>
     
