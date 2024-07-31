@@ -39,10 +39,10 @@
 
     <ul>
         {% for restaurant in restaurants %}
-            <li>  <p> {{ restaurant.restaurant_name }} </p>
+            <li>  <p> {{ restaurant.restaurant_name | e }} </p>
                 <ul>
-                    <li> address: {{ restaurant.address }}</li>
-                    <li class="colored"> visible: {{ restaurant.restaurant_visible }} </li>
+                    <li> address: {{ restaurant.address | e }}</li>
+                    <li class="colored"> visible: {{ restaurant.restaurant_visible | e }} </li>
                     <li> categories
                         <ul>
                             {% for category in restaurant_categories %}
@@ -53,7 +53,7 @@
                                         {% set buttonText = 'reapply category' %}
                                     {% endif %}
                                     <li class="colored" id='category-id-{{ category.id }}'> 
-                                        {{ category.category }}, visible: {{ category.category_visible }} <br>
+                                        {{ category.category | e }}, visible: {{ category.category_visible | e }} <br>
                                         <button onclick="toggleVisibilityOf( {{ category.id }}, 'restaurant_categories')"> {{ buttonText }} </button>
                                         <button onclick="deleteCategory( {{ category.id }} )"> delete category </button>
                                     </li>
@@ -172,9 +172,9 @@
     <ul>
         {% for user in users %}
             <li>
-                <p> username: {{ user.username }} </p>
+                <p> username: {{ user.username | e }} </p>
                 <p> is admin: {{ user.is_admin }} </p>
-                <p> email: {{ user.email }} </p>
+                <p> email: {{ user.email | e }} </p>
             </li>
         {% endfor %}
     </ul>
@@ -182,10 +182,10 @@
     <h2>ratings</h2>
     <ul>
         {% for item in ratings_with_comments_list %}
-            <li> <p>{{ item.restaurant_name }}, comment "{{ item.comment }}" by user "{{ item.username }}" </p>
+            <li> <p>{{ item.restaurant_name | e }}, comment "{{ item.comment | e }}" by user "{{ item.username | e}}" </p> <!-- NB! Without | e it doesn't escape <script> and other shit - why? I dunno! If the comment says <script> ..., then without the | e here, I'm in trouble. Why? Don't know. -->
                 <ul>
                 {% for key, value in item.items()%}
-                    <li class="colored">{{ key }} : {{ value }}</li>
+                    <li class="colored">{{ key }} : {{ value | e }}</li> <!-- because of 'comment' and other content, I need to escape the content -->
                 {% endfor %}
                 </ul>
             </li>

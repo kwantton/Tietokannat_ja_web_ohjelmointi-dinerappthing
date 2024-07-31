@@ -1,6 +1,8 @@
 // Initialize and add the map
 import apiServices from "./apiServices.js"; // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
 import starRating from "./starRating.js";
+import usersFeedback from "./usersFeedback.js";
+import safeHTML from "./safeHTML.js";
 
 let map;
 async function initMap(apiServices, starRating) {
@@ -83,7 +85,7 @@ async function initMap(apiServices, starRating) {
             markerElement.style.height = '26px';
             // console.log("place.icon:", place.icon)                 // the URL for the icon png image
 
-            // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). filter() produces an array from an array, i.e., a []
+            // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
             const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurant_id_from_db}`)
             let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
             const descriptionsLower = sensible_descriptions.map(d => d.toLowerCase()) // copy for testing
@@ -116,10 +118,10 @@ async function initMap(apiServices, starRating) {
               title: placeDetails.name,
               content: markerContainer
             }); 
-            // it's not possible to set an id normally for the AdvancedMarkerElement
+            // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements
 
-            const openingHours = placeDetails.opening_hours?.weekday_text || [];  // example: 'undefined || 1' returns 1, so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist. The .? is called optional chaining in JS
-            let openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
+            const openingHours = placeDetails.opening_hours?.weekday_text || [];  // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
+            const openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
             const openNow = placeDetails.opening_hours?.isOpen();                 // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work without it!
             let openNowMsg = '';
             openNow 
@@ -142,16 +144,26 @@ async function initMap(apiServices, starRating) {
               ? starRatingHTML = starRating(rating_average)
               : starRatingHTML = ''
             let commentHTML
-            filtered_ratings_for_restaurant.length !== 0
-              ? commentHTML = '<ul>' + ratings_for_restaurant.map(item => 
-                `<li> 
-                  <p>
-                    "${item.comment_visible ? item.comment : '~~comment removed~~'}" <br>
-                    ${item.rating_visible ? `${item.rating}/5` : '~~rating removed~~'} <br>
-                    (by username "${item.username}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
-                  </p>
-                </li>`).join('') + '</ul>'
-              : commentHTML = '<p>no comments yet</p>'    
+            if (filtered_ratings_for_restaurant.length !== 0) {
+              commentHTML = `
+                  <ul id="comment-HTML">` + 
+                    ratings_for_restaurant.map(item => {
+                      if (item.comment_visible || item.rating_visible) {
+                          return `<li>
+                              <p>
+                                  ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''} 
+                                  ${item.rating_visible ? `${item.rating}/5 <br>` : ''}
+                                  (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
+                              </p>
+                          </li>`
+                      } else {
+                          return ''
+                      }
+                    }).join('') + 
+                  '</ul>'
+            } else {
+                commentHTML = '<p>no comments yet</p>'
+            }    
             // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
 
             const feedbackHTML = `
@@ -178,8 +190,8 @@ async function initMap(apiServices, starRating) {
             </div>
               `
 
-            // THIS BELOW IS THE ACTUAL CONTENT OF THE INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
-            // in principle, this would allow for <script> injection, BUT all this info is from Google Places API, so I guess I trust it
+            // THIS BELOW IS THE ACTUAL CONTENT OF EACH RESTAURANT'S INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
+            // in principle, this would allow for <script> injection, BUT since all these variables are from Google Places API, I guess I trust it. The safe way would be to input stuff as .textContent for each HTML element, which would make it possible to inject actual <script>s.
               const infoWindowContent =
             ` 
             <div id="info-window-content"> 
@@ -212,7 +224,7 @@ async function initMap(apiServices, starRating) {
             // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
-            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API. Why? Because in the admin page of this site, the admin can add rough names and addresses, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
+            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
             const body = {
               'restaurant_id': restaurant_id_from_db,
               'restaurant_name': placeDetails.name,
@@ -242,8 +254,8 @@ async function initMap(apiServices, starRating) {
               ariaLabel: location.name,
             });
 
-            // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shwon
-            diner_marker.addListener('click', () => { // so that when you click on the diner_marker, you'll see the infowindow
+            // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
+            diner_marker.addListener('click', () => {
               infowindow.open({
                 anchor: diner_marker,
                 map,
@@ -293,9 +305,17 @@ async function initMap(apiServices, starRating) {
                       document.querySelector('#feedback-sent').style.display='inline-block'
                       document.querySelector('#feedback-text').value='' // reset the text field. It's hidden anyway, thus doesn't really matter 
                       
-                      const response = await apiServices.post('/api/feedback/', body)
-                      const data = await response.json()
-                      console.log({data})
+                      try {
+                        const response = await apiServices.post('/api/feedback/', body)
+                        const data = await response.json()
+                        console.log({data})
+                        const addedComment = usersFeedback(rating)
+                        document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                        document.querySelector('#new-comment').textContent = `"${comment}"` // (1) innerHTML is not safe, it enables writing <script> etc. .textcontent solves this security problem. Another solution would be to replace all the < and > and etc. characters with something else, but that would be shown also on the site! Not nice. (2) I want to have "" around the comment
+                      } catch (error) {
+                        console.error(error)
+                      }
+                      
                   }
                   })
                 },0) // yes, the ' 0 ms ' timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:

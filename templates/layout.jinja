@@ -15,6 +15,8 @@
             {% if session.username == 'admin'%}
                 | <a href="/admin"> admin </a>
             {% endif %}
+        {% else %}
+            | <a href="/">login</a>
         {% endif %}
         <hr>
         {% block content%} {% endblock %}
