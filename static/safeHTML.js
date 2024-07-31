@@ -12,6 +12,7 @@ const safeHTML = (str) => {
     });
 }
 // example: 
-// 'safe('<script>alert("morjens! :D")</script>')'
+// 'safeHTML('<script>alert("morjens! :D")</script>')'
 // returns: "&lt;script&gt;alert(&quot;morjens! :D&quot;)&lt;/script&gt;" 
+// which will be shown on page as '<script>alert("morjens! :D")</script>' BUT not being actual <script> in the HTML - thus safe!
 export default safeHTML

@@ -191,15 +191,14 @@ async function initMap(apiServices, starRating) {
               `
 
             // THIS BELOW IS THE ACTUAL CONTENT OF EACH RESTAURANT'S INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
-            // in principle, this would allow for <script> injection, BUT since all these variables are from Google Places API, I guess I trust it. The safe way would be to input stuff as .textContent for each HTML element, which would make it possible to inject actual <script>s.
+            // NB! There's not much user-originated HTML left to sanitize below, HOWEVER - placeDetails.name could be whatever. What if the name of the place has ' or < in it, for example? As for the others, 'placeDetails.x' are all derived from Google API, and commentHTML was checked already c:
               const infoWindowContent =
             ` 
             <div id="info-window-content"> 
-                <h1 id="firstHeading" class="firstHeading">${placeDetails.name}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
+                <h1 id="firstHeading" class="firstHeading">${safeHTML(placeDetails.name)}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
                 ${starRatingHTML}
                 <div id="bodyContent">
-                  <!-- <p><b>${placeDetails.address}</b></p> -->
-                  <p><b>${place.formatted_address}</b></p>
+                  <p><b>${safeHTML(place.formatted_address)}</b></p>
                   <div>${openNowMsg}</div>
                   <ul>${openingHoursHTML}</ul>
                   <h2>¿🍔/🍹/☕? </h2>
@@ -207,14 +206,14 @@ async function initMap(apiServices, starRating) {
                   <h2>comments</h2>
                   <p>
                     ${filtered_ratings_for_restaurant.length} review${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}
-                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''}
-                    <br> ${starRatingHTML}
+                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''} <br>
+                    ${starRatingHTML}
                   </p>
-                  ${commentHTML}
+                  ${commentHTML                                                                                 /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
                   <h2> feedback </h2>
                   ${user !== 'admin'
-                    ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML  /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
-                    : ` <p> Admin cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
+                    ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
+                    : ` <p> As 'admin', you cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
                         <a href='/logout'>to logout</a>`
                   }
                   
@@ -309,25 +308,21 @@ async function initMap(apiServices, starRating) {
                         const response = await apiServices.post('/api/feedback/', body)
                         const data = await response.json()
                         console.log({data})
-                        const addedComment = usersFeedback(rating)
+                        const addedComment = usersFeedback(body.comment, rating)
                         document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                        document.querySelector('#new-comment').textContent = `"${comment}"` // (1) innerHTML is not safe, it enables writing <script> etc. .textcontent solves this security problem. Another solution would be to replace all the < and > and etc. characters with something else, but that would be shown also on the site! Not nice. (2) I want to have "" around the comment
                       } catch (error) {
                         console.error(error)
-                      }
-                      
+                      }    
                   }
                   })
                 },0) // yes, the ' 0 ms ' timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
               }
             });
-            
-          } else {        // if getDetails doesn't succeed:
+          } else {        // if getDetails doesn't succeed
             console.error("getDetails was not successful for the following reason: " + detailStatus);
           };
         });
-
-      } else {            // if findPlaceFromQuery doesn't succeed:
+      } else {            // if findPlaceFromQuery doesn't succeed
         console.error("findPlaceFromQuery was not successful for the following reason: " + status); // this is printed in browser
       }
     });
