@@ -6,36 +6,33 @@ from os import getenv
 from werkzeug.security import check_password_hash, generate_password_hash
 from jinja2 import FileSystemLoader                     # I haven't got it to work yet, but it would be a good idea once you're using betterJinja extension AND want it to also recognize '.jinja' files, not just '.jinja' files
 from jinja2 import Environment
+import secrets                                          # for generating csrf token after login
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL')
 db = SQLAlchemy(app)
-app.secret_key = getenv("SECRET_KEY")
-admin_password = getenv("ADMIN_PASSWORD")
-API_key = getenv("GOOGLE_API_KEY")
+app.secret_key = getenv('SECRET_KEY')
+admin_password = getenv('ADMIN_PASSWORD')
+API_key = getenv('GOOGLE_API_KEY')
 
 env = Environment(loader=FileSystemLoader('templates'))
 env.add_extension('jinja2.ext.loopcontrols')
 
-@app.route("/")
+@app.route('/')
 def index():
     return render_template('index.jinja')
 
-@app.route('/api/delete-category/<int:category_id>', methods=["DELETE"])
+@app.route('/api/delete-category/<int:category_id>', methods=['DELETE'])
 def delete_category_id(category_id):
-    try:
-        sql = text('DELETE from restaurant_categories WHERE id = :category_id')
-        db.session.execute(sql, {'category_id':category_id})
-        db.session.commit()
-        return jsonify({'status':'ok', 'message':'DELETE ok'})
-    except Exception as e:
-        print("Couldn't DELETE category id for reason",str(e))
-        return jsonify({'status':'ERROR', 'message':"couldn't DELETE, backend sucks"}), 500 # 5.. = server-side error
+    sql = text('DELETE from restaurant_categories WHERE id = :category_id')
+    db.session.execute(sql, {'category_id':category_id})
+    db.session.commit()
+    return jsonify({'status':'ok', 'message':'DELETE ok'})
 
 @app.route('/api/toggle-visibility-of/<table>/<int:id>/') # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
 def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_id, or comment_id
     
-    # SECURITY CHECK: prevention of SQL injection (NB! ":table" is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
+    # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
     try:
         allowed_tables = {'restaurants','restaurant_categories','ratings','comments'}
         if table not in allowed_tables:
@@ -43,12 +40,12 @@ def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_
         visibility_column_names = dict(zip('comments restaurants restaurant_categories ratings'.split(), 'visible restaurant_visible category_visible rating_visible'.split()))
         column_name = visibility_column_names[table]
         
-        sql = text(f'SELECT {column_name} FROM {table} WHERE id=:id') # Why not :table? Because it's not allowed to use a variable for the table name. Tried that: "In SQL, using placeholders for table names or column names in parameterized queries doesn't work because placeholders can only be used for values, not for SQL identifiers (like table names or column names). This is why your table name is being surrounded by quotes and treated as a string literal, not as a table name." (ChatGPT). So yeah, I had that problem
+        sql = text(f'SELECT {column_name} FROM {table} WHERE id=:id') # Why not :table? Because it's not allowed to use a variable for the table name. Tried that: 'In SQL, using placeholders for table names or column names in parameterized queries doesn't work because placeholders can only be used for values, not for SQL identifiers (like table names or column names). This is why your table name is being surrounded by quotes and treated as a string literal, not as a table name.' (ChatGPT). So yeah, I had that problem
         result = db.session.execute(sql, {'id':id}) # ':id', hence safe - variable id cannot escape, as per Flask mechanics
         row = result.fetchone()
         item_visible = row[0] # this is either True or False
-        print("\nrow:", row)
-        print("item_visible:", item_visible)
+        print('\nrow:', row)
+        print('item_visible:', item_visible)
         if item_visible:
             sql = text(f'UPDATE {table} SET {column_name}=FALSE WHERE id=:id') # ONCE AGAIN remember, safety was already checked above. This is therefore ok c:
         else:
@@ -60,7 +57,7 @@ def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_
         print(f"Couldn't toggle visibility of ${table}/${id}. Reason:", str(e))
         return jsonify({'status':'ERROR', 'message':"couldn't toggle visibility"}), 500 # 5.. = server-side error
 
-@app.route('/add-category/<int:restaurant_id>', methods=["POST"])
+@app.route('/add-category/<int:restaurant_id>', methods=['POST'])
 def add_category(restaurant_id):
     data = request.get_json()
     category = data.get('new_category')
@@ -70,7 +67,7 @@ def add_category(restaurant_id):
         db.session.commit()
         return jsonify({'status':'ok', 'message':'added category'}), 201 # 201 Created = created new resource successfully
     except Exception as e:
-        print("Error while trying to add a new category:",e)
+        print('Error while trying to add a new category:',e)
         return jsonify({'status':'error', 'message':str(e)}), 500
     
 @app.route('/api/get-categories/<int:restaurant_id>')
@@ -81,55 +78,55 @@ def get_categories_by_restaurant_id(restaurant_id):
     list_of_db_categories = [{'restaurant_id':row.restaurant_id, 'category':row.category, 'category_visible':row.category_visible} for row in rows]
     return jsonify(list_of_db_categories)
 
-@app.route('/api/update-name-address-categories', methods=["POST"])
+@app.route('/api/update-name-address-categories', methods=['POST'])
 def update_name_and_address():
-    print("\nhello from update_name_and_address()!")
+    print('\nhello from update_name_and_address()!')
     try:
         data = request.get_json()
-        print("\tdata:", data)
+        print('\tdata:', data)
         restaurant_name = data.get('restaurant_name')
         address = data.get('address')
         restaurant_id = data.get('restaurant_id')
         descriptions = data.get('descriptions')
-        print("\tid:", restaurant_id)
+        print('\tid:', restaurant_id)
 
         # check if the restaurant exists in the db
         test_sql = text('SELECT * FROM restaurants WHERE id=:id')
         rows = db.session.execute(test_sql, {'id': restaurant_id})
         test_result = rows.fetchall()
-        print("\ttest_result:", test_result)  # Verify that the restaurant exists
+        print('\ttest_result:', test_result)  # Verify that the restaurant exists
 
         if not test_result:
-            print("\tNo restaurant found with the given ID")
+            print('\tNo restaurant found with the given ID')
             return jsonify({'status': 'error', 'message': 'Restaurant not found'}), 404 # this would then be shown in the browser console
 
         existing_restaurant = test_result[0]
-        print("\texisting_restaurant:", existing_restaurant)
+        print('\texisting_restaurant:', existing_restaurant)
 
         # check if the data is actually different. I was initially accidentally trying to update with the same name and address as before (mixup of variable names in index.js) and was wondering why nothing was updated - this was the reason...
         check_msg = ''
         if existing_restaurant.restaurant_name == restaurant_name and existing_restaurant.address == address:
-            print("\tNo changes - not going to update name or address")
+            print('\tNo changes - not going to update name or address')
             response = jsonify({'status': 'success', 'message': 'No changes detected'})
         else:
             # since name and address are different, perform the sql table update
             sql = text('UPDATE restaurants SET restaurant_name=:restaurant_name, address=:address WHERE id=:id')
             result = db.session.execute(sql, {'restaurant_name': restaurant_name, 'address': address, 'id': restaurant_id})
-            print("\tresult.rowcount:", result.rowcount)  # Print number of rows affected
+            print('\tresult.rowcount:', result.rowcount)  # Print number of rows affected
             db.session.commit()
-            print("\tSession state after commit:", db.session.info)  # Print session state
+            print('\tSession state after commit:', db.session.info)  # Print session state
 
             # verify that name and address were changed
             rows_after_update = db.session.execute(test_sql, {'id': restaurant_id})
             result_after_update = rows_after_update.fetchall()
-            print("\tresult_after_update:", result_after_update)  # Verify the update
+            print('\tresult_after_update:', result_after_update)  # Verify the update
             check_msg += 'Restaurant name and/or address updated! '
 
         # Check the old categories (sql db) AND the descriptions (from 'index.js' Places API). If some descriptions are not found in the db, then add them there, so the admin can see them too, and doesn't have to add them themselves separately (for example, if cafe is there already by Places API, then that's less work for the admin).
         sql = text('SELECT * FROM restaurant_categories WHERE restaurant_id = :restaurant_id')
         result = db.session.execute(sql, {'restaurant_id':restaurant_id})
         current_categories = result.fetchall()
-        print("current categories:", current_categories)
+        print('current categories:', current_categories)
         list_of_current_categories = [{'restaurant_id':row.restaurant_id, 'category':row.category, 'category_visible':row.category_visible} for row in current_categories]
         check_set = set()
         for item in list_of_current_categories:
@@ -149,15 +146,15 @@ def update_name_and_address():
         response = jsonify({'status': 'success', 'updated': check_msg})
         return response
     except Exception as e:
-        print("Error updating restaurant:", e)
+        print('Error updating restaurant:', e)
         return jsonify({'status': 'error', 'message': str(e)}), 500     # error code 500, server error
 
-@app.route('/api/add-restaurant', methods=["POST"])
+@app.route('/api/add-restaurant', methods=['POST'])
 def add_a_restaurant():
 
     # I sent a json, not a form, in the POST to this address from the 'admin.jinja' page - so
     data = request.get_json()   
-    print("data:", data)
+    print('data:', data)
     restaurant_name = data.get('restaurant_name')
     address = data.get('address')
     sql = text('''
@@ -219,13 +216,16 @@ def admin():
     users = result.fetchall()
     return render_template('admin.jinja', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users, restaurant_categories=restaurant_categories)
 
-@app.route('/api/feedback/', methods=["POST"])
+@app.route('/api/feedback/', methods=['POST'])
 def feedback():
     data = request.get_json()
-    print("data:", data)
-    comment = data["comment"]
-    username = session["username"]
-    print("username (from session):", username)
+    print('data:', data)
+    comment = data['comment']
+    username = session['username']
+    csrf_token = request.headers.get('X-CSRF-Token')
+    if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser c:
+            return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
+    print('username (from session):', username)
     result = db.session.execute(text('SELECT * FROM users WHERE users.username = :username'), {'username':username})
     row = result.fetchone()
     user_id = row.id
@@ -233,7 +233,7 @@ def feedback():
     # comment_id is used in table 'ratings'
     # I'm saving also empty comments (THEY SHOULDN'T EXIST THOUGH SINCE I CHECK FOR THAT IN JS in index.js, but it doesn't matter anyways c:), in case someone sends grades without comments, the user reading those ratings will see that no comment was provided
     sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE)')
-    result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data["restaurant_id"], 'comment':comment})
+    result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment':comment})
     db.session.commit()
     result = db.session.execute(text('SELECT COUNT (*) FROM comments')) # the latest one that was just added
     row = result.fetchone()
@@ -271,35 +271,26 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings_with_comments = result.fetchall()
     ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
-    # print("ratings_with_comments_list:", ratings_with_comments_list)
+    # print('ratings_with_comments_list:', ratings_with_comments_list)
     return jsonify(ratings_with_comments_list)
 
-# I'm not actually using this for anything real... I think?
-@app.route('/api/ratings')
-def get_ratings():
-    sql = text('SELECT * FROM ratings')
-    result = db.session.execute(sql)
-    ratings = result.fetchall()
-    rating_list = [{'id': row.id, 'user_id': row.user_id, 'restaurant_id': row.restaurant_id, 'comment_id':row.comment_id, 'rating':row.rating, 'created_at':row.created_at} for row in ratings]
-    return jsonify(rating_list)
-
-# I'm not actually using this for anything real... I think?
-@app.route('/api/comments')
-def get_comments():
-    sql = text('SELECT * FROM comments')
-    result = db.session.execute(sql)
-    comments = result.fetchall()
-    comment_list = [{'id': row.id, 'user_id': row.user_id, 'restaurant_id': row.restaurant_id, 'comment':row.comment, 'created_at':row.created_at} for row in comments]
-    return jsonify(comment_list)
-
-@app.route("/api/sessionuser")  # for providing session.user to 'index.js'
+@app.route('/api/sessionuser')  # for providing session['username'] to 'index.js'
 def get_sessionuser():
     try:
-        session_user = session["username"]
+        session_user = session['username']
     except:
         session_user = ''
-    print("session_user:", session_user)
-    return jsonify({'session_user':session_user}) # always '', why?
+    print('session_user:', session_user)
+    return jsonify({'session_user':session_user})
+
+@app.route('/api/sessioncsrf')         # for providing session['csrf_token'] to 'index.js'
+def get_sessioncsrf():
+    try:
+        csrf_token = session['csrf_token']
+    except:
+        csrf_token = ''
+    print('csrf_token:', csrf_token)
+    return jsonify({'csrf_token':csrf_token}) 
 
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
@@ -317,65 +308,70 @@ def restaurants():
     restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
     return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
 
-@app.route("/login", methods=["POST"])
+@app.route('/login', methods=['POST'])
 def login():
+    session['csrf_token'] = secrets.token_hex(16)
     username = request.form['username']
     password = request.form['password']
 
     sql = text('SELECT username, password FROM users WHERE username=:username') # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
-    result = db.session.execute(sql, {"username":username, "password":password})  # HASHED pw into db
+    result = db.session.execute(sql, {'username':username, 'password':password})  # HASHED pw into db
     
-    if username == "admin":
+    if username == 'admin':
         if password == admin_password:                          # admin_password is stored as env var
-            session["username"] = username
-            return redirect("/")
+            session['username'] = username
+            return redirect('/')
         else:
-            return render_template("error.jinja", message="username or password is wrong")
+            return render_template('error.jinja', message='username or password is wrong')
     else:
         try:
             user = result.fetchone()        # the row has two values: u_name and p_word.
             if check_password_hash(user.password, password):
-                session["username"] = username
-                return redirect("/")
+                session['username'] = username
+                return redirect('/')
             else:
-                return render_template("error.jinja", message="username or password is wrong")    
+                return render_template('error.jinja', message='username or password is wrong')    
         except:
             print("couldn't get real_username, hashed_pw, returning error message:")
-            return render_template("error.jinja", message="username or password is wrong")
+            return render_template('error.jinja', message='username or password is wrong')
         
-@app.route("/logout", methods=["GET"])                                                              # GET is already there by default, but just for practice!
+@app.route('/logout')
 def logout():
-    del session["username"]
-    return redirect("/")
+    if session['username']:                             # the user may try this url without being logged in, and that's what this check is for
+        del session['username']
+    if session['csrf_token']:
+        del session['csrf_token']
+    return redirect('/')
 
-@app.route("/register", methods=["GET","POST"])                                                     # 'GET' is there by default, but if you just write "POST", you'll override GET. Hence, both need to be listed
+# btw there's no point in csrf tokening this. All they can do is add a user, that's it.
+@app.route('/register', methods=['GET','POST'])         # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
 def register():
-    if request.method == "GET":
-        return render_template("register.jinja")
-    if request.method == "POST":
-        username = request.form["username"]
-        password1 = request.form["password1"]
-        password2 = request.form["password2"]
-        email = request.form["email"]
+    if request.method == 'GET':
+        return render_template('register.jinja')
+    if request.method == 'POST':
+        username = request.form['username']
+        password1 = request.form['password1']
+        password2 = request.form['password2']
+        email = request.form['email']
         if password1 != password2:
-            # return '''<script> alert("passwords don't match")</script>'''
-            return render_template("error.jinja", message="passwords don't match")
+            # return '''<script> alert('passwords don't match')</script>'''
+            return render_template('error.jinja', message="passwords don't match")
         elif len(username) < 3:
-            return render_template("error.jinja", message="username should be over 3 characters")
-        elif username == "admin":
-            return render_template("error.jinja", message="username taken")
+            return render_template('error.jinja', message='username should be over 3 characters')
+        elif username == 'admin':
+            return render_template('error.jinja', message='username taken')
         elif len(password1) < 4:
-            return render_template("error.jinja", message="password has to be at least 4 characters")
+            return render_template('error.jinja', message='password has to be at least 4 characters')
         else:
             sql = text('SELECT * from users WHERE username=:username')
             result = db.session.execute(sql, {'username':username})
             username_already_exists = result.fetchone()
-            #print("username_already_exists:", username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
+            #print('username_already_exists:', username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
             if username_already_exists:
-                return render_template("error.jinja", message="username is already taken")
+                return render_template('error.jinja', message='username is already taken')
             
             hash_value = generate_password_hash(password1)                                                                                       # redundant else BUT I like clarity
             sql = text('INSERT INTO users (username, password, email, is_admin) VALUES (:username, :password, :email, FALSE)')        # 'FALSE': not an admin account
-            result = db.session.execute(sql, {"username":username, "password":hash_value, "email":email})
+            result = db.session.execute(sql, {'username':username, 'password':hash_value, 'email':email})
             db.session.commit() # remember to commit!
-            return render_template("/registration-successful.jinja")
+            return render_template('/registration-successful.jinja')

@@ -7,6 +7,7 @@ The admin can add new places on the map by querying based on a rough name and a 
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map. The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
+- csrf_token for every POST, UPDATE or DELETE -kind of form, checking according to session.csrf_token in app.py
 - refactor and clean-up
 
 ## Done

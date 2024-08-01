@@ -4,11 +4,12 @@ const getAll = async url => {
     return data
 }
 
-const post = async (url, body) => {
+const post = async (url, body, csrf_token) => {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type':'application/json'
+            'Content-Type':'application/json',
+            'X-CSRF-Token':csrf_token
         }, 
         body:JSON.stringify(body)
     })

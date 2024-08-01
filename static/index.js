@@ -13,13 +13,9 @@ async function initMap(apiServices, starRating) {
   const user = data1.session_user
   console.log(`user: "${user}"`)
 
-  // ratings, for checking
-  // const ratings = await apiServices.getAll('/api/ratings')
-  // console.log("ratings:", ratings)
-
-  // comments, for checking
-  // const comments = await apiServices.getAll('/api/comments')
-  // console.log("comments:", comments)
+  let data2 = await apiServices.getAll('/api/sessioncsrf') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+  const csrfToken = data2.csrf_token
+  console.log(`csrfToken: "${csrfToken}"`)
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
@@ -29,7 +25,6 @@ async function initMap(apiServices, starRating) {
   const { Map } = await google.maps.importLibrary("maps");
   const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
   const { PlacesService } = await google.maps.importLibrary('places')     // this is for getting exact locations, since based on only address (and google Geocoder API), many diners would get placed into the wrong end of a larger building, AND they would be placed on top of each other
-  // const { Geocoder } = await google.maps.importLibrary('geocoding')    // not optimal here; this is for converting between lng, lat, and addresses; I have enabled this in my Google Clouds API so it works. However, since I used this for converting addresses to lng, lat, it can only guess the exact location within a building - very misleading in case of larger buildings!
 
   // The map itself, centered at Kumpula region. The restaurants from SQL db are set below
   map = new Map(document.getElementById("map"), { // note: in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
@@ -232,7 +227,7 @@ async function initMap(apiServices, starRating) {
             }
             
             try {
-              const response = await apiServices.post('/api/update-name-address-categories', body)
+              const response = await apiServices.post('/api/update-name-address-categories', body, csrfToken)
               const data = await response.json();
           
               if (response.ok) {
@@ -305,7 +300,7 @@ async function initMap(apiServices, starRating) {
                       document.querySelector('#feedback-text').value='' // reset the text field. It's hidden anyway, thus doesn't really matter 
                       
                       try {
-                        const response = await apiServices.post('/api/feedback/', body)
+                        const response = await apiServices.post('/api/feedback/', body, csrfToken)
                         const data = await response.json()
                         console.log({data})
                         const addedComment = usersFeedback(body.comment, rating)
