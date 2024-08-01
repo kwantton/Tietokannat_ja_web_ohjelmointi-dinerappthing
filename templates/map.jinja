@@ -5,6 +5,7 @@
 {% endblock %}
 {% block content %}
 
+
     
     <div id="map-search-name"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
         <h3> name search from places on the map </h3>
@@ -200,4 +201,5 @@
     <!-- NB! My actual map JS is loaded here: -->
     <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            
     <!-- Above, I load 'index.js' to be run. It has all the actual logic for the map. I thought it might be a bit faster to load this big js here below the actual (?) map script above, but it doesn't seem to matter regarding the loading time of the page for the user. -->
+
 {% endblock %}

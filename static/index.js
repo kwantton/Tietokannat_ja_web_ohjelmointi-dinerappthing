@@ -4,22 +4,23 @@ import starRating from "./starRating.js";
 import usersFeedback from "./usersFeedback.js";
 import safeHTML from "./safeHTML.js";
 
+
+// ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
+// seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
+let data1 = await apiServices.getAll('/api/sessionuser') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+const user = data1.session_user
+console.log(`user: "${user}"`)
+
+let data2 = await apiServices.getAll('/api/sessioncsrf') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+const csrfToken = data2.csrf_token
+console.log(`csrfToken: "${csrfToken}"`)
+
+let data3 = await apiServices.getAll('/api/map-token') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+const mapToken = data3.map_token
+console.log(`mapToken: "${mapToken}"`)
+
 let map;
 async function initMap(apiServices, starRating) {
-
-  // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
-  // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
-  let data1 = await apiServices.getAll('/api/sessionuser') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
-  const user = data1.session_user
-  console.log(`user: "${user}"`)
-
-  let data2 = await apiServices.getAll('/api/sessioncsrf') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
-  const csrfToken = data2.csrf_token
-  console.log(`csrfToken: "${csrfToken}"`)
-
-  let data3 = await apiServices.getAll('/api/map-token') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
-  const mapToken = data3.map_token
-  console.log(`mapToken: "${mapToken}"`)
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
@@ -223,28 +224,31 @@ async function initMap(apiServices, starRating) {
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
             // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
-            const body = {
-              'restaurant_id': restaurant_id_from_db,
-              'restaurant_name': placeDetails.name,
-              'address': place.formatted_address,
-              'descriptions':sensible_descriptions
-            }
-            
-            try {
-              const response = await apiServices.post('/api/update-name-address-categories', body, mapToken)
-              const data = await response.json();
-          
-              if (response.ok) {
-                let updatedOrNot
-                data.updated === ''
-                  ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
-                  :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
-                console.log(updatedOrNot, data);
-              } else {
-                console.error('Update failed:', data);
+            // LET'S DO THIS ONLY IF ADMIN IS LOGGED IN. This conserves db traffic and prevents unnecessary update-need-checks in app.py
+            if (user === 'admin') {
+              const body = {
+                'restaurant_id': restaurant_id_from_db,
+                'restaurant_name': placeDetails.name,
+                'address': place.formatted_address,
+                'descriptions':sensible_descriptions
               }
-            } catch (error) {
-              console.error('Error:', error);
+              
+              try {
+                const response = await apiServices.post('/api/update-name-address-categories', body, mapToken)
+                const data = await response.json();
+            
+                if (response.ok) {
+                  let updatedOrNot
+                  data.updated === ''
+                    ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
+                    :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
+                  console.log(updatedOrNot, data);
+                } else {
+                  console.error('Update failed:', data);
+                }
+              } catch (error) {
+                console.error('Error:', error);
+              }
             }
 
             const infowindow = new google.maps.InfoWindow({
