@@ -156,18 +156,23 @@
                     restaurant_name:form.restaurant_name.value,
                     address:form.address.value
                 }
-                apiServices.post('/api/add-restaurant', body)
+                apiServices.post('/api/add-restaurant', body, '{{ session.csrf_token }}')
                 .then(response => response.json())
                 .then(data => {
                     // reset the 'name' and 'address' -fields, and show a message that the operation was successful
-                    if (data.status = 'ok') {
+                    if (data.status === 'ok') {
                         const successMessage = document.createElement("p") // create a success message paragraph
                         successMessage.style.color = 'green'
                         successMessage.textContent = `Restaurant "${form.restaurant_name.value}" added to database. Refresh if you want to see the new addition above.`
                         form.appendChild(successMessage)
                         form.restaurant_name.value = ''
                         form.address.value = ''             // reset fields in case admin wants to add another right away
-                    } 
+                    } else {
+                        const errorMessage = document.createElement("p");
+                        errorMessage.style.color = 'red';
+                        errorMessage.textContent = `Error: ${data.message}`;
+                        form.appendChild(errorMessage);
+                    }
                 })
                 .catch(error => console.error(error))  
             }  

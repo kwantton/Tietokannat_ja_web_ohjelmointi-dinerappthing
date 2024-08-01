@@ -160,8 +160,10 @@ def update_name_and_address():
 
 @app.route('/api/add-restaurant', methods=['POST'])
 def add_a_restaurant():
-
-    # I sent a json, not a form, in the POST to this address from the 'admin.jinja' page - so
+    # I sent a json, not a form, in the POST to this address from the 'admin.jinja' page - so request.get_json() it is
+    csrf_token = request.headers.get('X-CSRF-Token')
+    if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser c:
+        return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     data = request.get_json()   
     print('data:', data)
     restaurant_name = data.get('restaurant_name')
@@ -170,7 +172,7 @@ def add_a_restaurant():
     INSERT INTO restaurants (restaurant_name, address, restaurant_visible) 
     VALUES (:restaurant_name, :address, TRUE)
     ''')
-    result = db.session.execute(sql, {'restaurant_name':restaurant_name, 'address':address})
+    db.session.execute(sql, {'restaurant_name':restaurant_name, 'address':address})
     db.session.commit()
     response = jsonify({'status': 'ok', 'message': 'restaurant added'})
     return response # this just returns this json back to where the fetch (post) was done! c: cool
