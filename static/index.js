@@ -13,11 +13,11 @@ console.log(`user: "${user}"`)
 
 let data2 = await apiServices.getAll('/api/sessioncsrf') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
 const csrfToken = data2.csrf_token
-console.log(`csrfToken: "${csrfToken}"`)
+// console.log(`csrfToken: "${csrfToken}"`) // let's not show this to actual users
 
 let data3 = await apiServices.getAll('/api/map-token') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
 const mapToken = data3.map_token
-console.log(`mapToken: "${mapToken}"`)
+// console.log(`mapToken: "${mapToken}"`) // let's not show this either
 
 let map;
 async function initMap(apiServices, starRating) {

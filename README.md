@@ -4,10 +4,10 @@ A user can log in, view restaurants (view: Google Maps API) based on info in a P
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
 on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.
 The admin can add new places on the map by querying based on a rough name and a rough address, hide existing places, as well as add and remove descriptions ("categories") of the places. The admin can delete reviews by rendering them invisible to others (we don't want to permanently delete the evidence c;). The admin can also delete comments by rendering them invisible. Deleting comments and reviews (non-permanently) can be done independently of each other. Hidden (non-permanently 'removed') ratings are ignored in calculation of grade average for a place.
-The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map. The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
+The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
-- csrf_token for every POST, UPDATE or DELETE -kind of form, checking according to session.csrf_token in app.py
+
 - refactor and clean-up
 
 ## Done
@@ -25,6 +25,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] "layout.jinja" to use as a template for all the pages (except the error page, too distracting there)
 - [x] major refactorization of visibility toggling in 'app.py', saving about 100 rows of space (repetition out of the window)
 - [x] admin can permanently DELETE categories (in addition to disabling them), and in case of a successful DELETE, the respective category with its associated buttons are "display.style = none"'d -> no need to refresh.
+- [x] csrf_token for every POST, UPDATE or DELETE -kind of form, checking according to session.csrf_token in app.py
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
@@ -58,9 +59,8 @@ See schema.sql
 - set DATABASE_URL=postgresql:///\[your_user_here\]
 - ADMIN_PASSWORD should be set raw; in English, do not use hashing for the actual password string; instead type the ADMIN_PASSWORD as-is
 GOOGLE_API_KEY: I'm using google api for the map services. For that, you'll need 
-- a 39-character (in my case) API Key from Google Cloud. With that set as the GOOGLE_API_KEY environment variable, AND 
+- a 39-character (or the like) API Key from Google Cloud. With that set as the GOOGLE_API_KEY environment variable, AND 
 - when you enable 
-    - Geocoder and 
     - Maps JavaScript API in your Google Cloud settings, 
 you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand anything :p
 
