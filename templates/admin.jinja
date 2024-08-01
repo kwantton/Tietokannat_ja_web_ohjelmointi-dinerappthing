@@ -9,7 +9,10 @@
     <script> 
         const toggleVisibilityOf = (id, target) => {
             console.log(`toggle visibility for the following target: table '${target}', id ${id}`)
-            fetch(`/api/toggle-visibility-of/${target}/${id}`)
+            fetch(`/api/toggle-visibility-of/${target}/${id}`, {
+                method:'PUT',
+                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
+            })
             .then(response => response.json())
             .then(data => {
                 console.log("data after updating id:", data)
@@ -18,7 +21,10 @@
         }
 
         const deleteCategory = categoryId => {
-            fetch(`/api/delete-category/${categoryId}`, {method:'DELETE'})
+            fetch(`/api/delete-category/${categoryId}`, {
+                method:'DELETE', 
+                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
+                })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'ok') {

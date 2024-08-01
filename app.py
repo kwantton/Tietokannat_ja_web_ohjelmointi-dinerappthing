@@ -24,16 +24,21 @@ def index():
 
 @app.route('/api/delete-category/<int:category_id>', methods=['DELETE'])
 def delete_category_id(category_id):
+    csrf_token = request.headers.get('X-CSRF-Token') # it's still named the same
+    if session['csrf_token'] != csrf_token: # tried, it works. If you change this to ==, returns 403 forbidden, 'Bad CSRF'
+        return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     sql = text('DELETE from restaurant_categories WHERE id = :category_id')
     db.session.execute(sql, {'category_id':category_id})
     db.session.commit()
     return jsonify({'status':'ok', 'message':'DELETE ok'})
 
-@app.route('/api/toggle-visibility-of/<table>/<int:id>/') # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
+@app.route('/api/toggle-visibility-of/<table>/<int:id>/', methods=['PUT']) # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
 def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_id, or comment_id
-    
-    # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
+    csrf_token = request.headers.get('X-CSRF-Token')
+    if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser if you try hiding/showing a restaurant, category, comment or rating c:
+        return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     try:
+        # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
         allowed_tables = {'restaurants','restaurant_categories','ratings','comments'}
         if table not in allowed_tables:
             raise ValueError("Invalid table name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list!")
@@ -82,6 +87,10 @@ def get_categories_by_restaurant_id(restaurant_id):
 def update_name_and_address():
     print('\nhello from update_name_and_address()!')
     try:
+        map_token = request.headers.get('X-CSRF-Token') # it's still named the same
+        if session['map_token'] != map_token:
+            return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
+
         data = request.get_json()
         print('\tdata:', data)
         restaurant_name = data.get('restaurant_name')
@@ -292,6 +301,12 @@ def get_sessioncsrf():
     print('csrf_token:', csrf_token)
     return jsonify({'csrf_token':csrf_token}) 
 
+@app.route('/api/map-token')         # for providing session['csrf_token'] to 'index.js'
+def get_map_token():
+    map_token = session['map_token']
+    print('map_token:', map_token)
+    return jsonify({'map_token':map_token}) 
+
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
     sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
@@ -303,6 +318,7 @@ def get_restaurants_json():
 @app.route('/map')
 def restaurants():
     sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
+    session['map_token'] = secrets.token_hex(16) # the purpose of this is to ensure that the request is coming from the exact same site. For updating the db information regarding restaurant name, address and (some) categories, it's independent of the user - it doesn't matter if a user is logged in or not.
     result = db.session.execute(sql)
     restaurants = result.fetchall()
     restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
