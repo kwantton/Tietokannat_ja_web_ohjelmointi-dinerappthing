@@ -9,7 +9,7 @@ const post = async (url, body, csrf_token) => {
         method: 'POST',
         headers: {
             'Content-Type':'application/json',
-            'X-CSRF-Token':csrf_token
+            'X-CSRF-Token':csrf_token,
         }, 
         body:JSON.stringify(body)
     })

@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS                             # needed for allowing CORS to maps.googleapis.com... CORS = cross-origin resource sharing (https://medium.com/@mterrano1/cors-in-a-flask-api-38051388f8cc)
 from flask import redirect, render_template, request, session
 from sqlalchemy import text                             # needed in new versions of SQLAlchemy, including the version I have (source: https://hy-tsoha.github.io/materiaali/osa-2/)
 from flask_sqlalchemy import SQLAlchemy
@@ -9,7 +10,10 @@ from jinja2 import Environment
 import secrets                                          # for generating csrf token after login
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL')
+# CORS(app, origins=['https://maps.googleapis.com/maps/api/mapsjs/gen_204?csp_test=true'])                                               # needed for allowing CORS to maps.googleapis.com... CORS = cross-origin resource sharing (https://medium.com/@mterrano1/cors-in-a-flask-api-38051388f8cc)
+# app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/)
+app.config["SQLALCHEMY_DATABASE_URI"] = getenv("DATABASE_URL").replace("://", "ql://", 1) # NB! FOR fly.io BUILD! See course material (https://hy-tsoha.github.io/materiaali/osa-3/)
+
 db = SQLAlchemy(app)
 app.secret_key = getenv('SECRET_KEY')
 admin_password = getenv('ADMIN_PASSWORD')
@@ -237,20 +241,20 @@ def feedback():
     if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser c:
             return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     print('username (from session):', username)
-    result = db.session.execute(text('SELECT * FROM users WHERE users.username = :username'), {'username':username})
+    result = db.session.execute(text('SELECT * FROM users WHERE users.username = :username;'), {'username':username})
     row = result.fetchone()
     user_id = row.id
     
     # comment_id is used in table 'ratings'
     # I'm saving also empty comments (THEY SHOULDN'T EXIST THOUGH SINCE I CHECK FOR THAT IN JS in index.js, but it doesn't matter anyways c:), in case someone sends grades without comments, the user reading those ratings will see that no comment was provided
-    sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE)')
+    sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE);')
     result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment':comment})
     db.session.commit()
-    result = db.session.execute(text('SELECT COUNT (*) FROM comments')) # the latest one that was just added
+    result = db.session.execute(text('SELECT COUNT (*) FROM comments;')) # the latest one that was just added
     row = result.fetchone()
     comment_id = row.count # atomatically column 'count' as explained in the course material
     if 'rating' in data:    # if a rating was provided, put it into the db
-        sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW(), TRUE)')
+        sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW(), TRUE);')
         result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment_id':comment_id, 'rating':data['rating']})           
         db.session.commit()
     return jsonify({'status': 'success', 'message': 'Rating and feedback submitted successfully'}) # this just returns this json back to the index where the fetch (post) was done! c: cool
@@ -311,7 +315,7 @@ def get_map_token():
 
 @app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
 def get_restaurants_json():
-    sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
+    sql = text('SELECT * FROM restaurants WHERE restaurant_visible;')
     result = db.session.execute(sql)
     restaurants = result.fetchall()
     restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible,} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
@@ -319,12 +323,17 @@ def get_restaurants_json():
 
 @app.route('/map')
 def restaurants():
-    sql = text('SELECT * FROM restaurants WHERE restaurant_visible')
+    sql = text('SELECT * FROM restaurants WHERE restaurant_visible;')
     session['map_token'] = secrets.token_hex(16) # the purpose of this is to ensure that the request is coming from the exact same site. For updating the db information regarding restaurant name, address and (some) categories, it's independent of the user - it doesn't matter if a user is logged in or not.
-    result = db.session.execute(sql)
-    restaurants = result.fetchall()
-    restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
-    return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
+    try:
+        result = db.session.execute(sql)
+        restaurants = result.fetchall()
+        restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
+        return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
+    except Exception as e:
+        print("ERROR in route '/map' when trying to fetchall() from all restaurants:", e)
+    
+    
 
 @app.route('/login', methods=['POST'])
 def login():

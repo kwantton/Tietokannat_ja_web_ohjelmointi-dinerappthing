@@ -1,5 +1,10 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
+Now the application can be tested in 'https://dinerappthing.fly.dev/admin'. Note! AdBlockers can prevent normal function, including CORS
+functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
+that only happens when using adblocker.
+I have not yet tested if the restaurant map page is ok.
+
 A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
 on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.

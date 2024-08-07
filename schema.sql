@@ -6,7 +6,7 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL
 );
 
--- please note: this user is created because a user_id is needed for other tables. Since this password is not hashed, it should be, it cannot be input when you log in; you won't get in, as this password will be interpreted as a hashed value, while it's not hashed, as you can clearly see
+-- please note: this user is created because a user_id is needed for other tables. Since this password is not hashed, it cannot be input as-is when you log in; you won't get in, as this password will be interpreted as a hashed value. Yes, you could decrypt this one, but it's not very useful to anyone since this is not an admin account c: also your username would then be 'dummy' and easily recognizable in that case ;)
 INSERT INTO users (username, password, is_admin, email) VALUES ('dummy','doesnt_work_not_hashed', FALSE, 'testi@esimerkki.fi');
 
 CREATE TABLE restaurants (

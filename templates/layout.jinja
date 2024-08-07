@@ -4,6 +4,7 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed for getting the url that Flask is handling-->
         {% block more_css %}  {% endblock  %} <!-- Why this exists: it's best to put all style css -->
         <title> dinerapp - {% block title %} {% endblock %}</title>
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> <!-- to get https:// always! -->
     </head>
     <body>
         <h1> DinerApp </h1>

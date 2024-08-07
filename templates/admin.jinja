@@ -6,10 +6,11 @@
 {% if session.username == 'admin' %}
 
     <!-- the beauty of a <script> without type="module" is that now these functions below are available in the whole HTML document with no further hassle. -->
-    <script> 
+    <script>
+        const baseUrl = `${window.location.protocol}//${window.location.host}`  // this ensures that both http:// (local) and https:// (fly.io) work; so https: would be 'protocol', and 'dinerappthing.fly.dev' would be the host
         const toggleVisibilityOf = (id, target) => {
             console.log(`toggle visibility for the following target: table '${target}', id ${id}`)
-            fetch(`/api/toggle-visibility-of/${target}/${id}`, {
+            fetch(`${baseUrl}/api/toggle-visibility-of/${target}/${id}`, { 
                 method:'PUT',
                 headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
             })
@@ -21,7 +22,7 @@
         }
 
         const deleteCategory = categoryId => {
-            fetch(`/api/delete-category/${categoryId}`, {
+            fetch(`${baseUrl}/api/delete-category/${categoryId}`, {
                 method:'DELETE', 
                 headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
                 })
