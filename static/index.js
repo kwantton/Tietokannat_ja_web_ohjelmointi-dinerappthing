@@ -94,7 +94,7 @@ async function initMap(apiServices, starRating) {
                 sensible_descriptions.push(categoryJSON.category)
               }
             })
-            let descriptionsHTML = sensible_descriptions.map(description => `<li>${description}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
+            let descriptionsHTML = sensible_descriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
             // text label element for the marker above
             const labelElement = document.createElement('span');
