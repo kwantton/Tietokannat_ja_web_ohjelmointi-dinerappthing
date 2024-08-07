@@ -1,5 +1,4 @@
 from flask import Flask, jsonify
-from flask_cors import CORS                             # needed for allowing CORS to maps.googleapis.com... CORS = cross-origin resource sharing (https://medium.com/@mterrano1/cors-in-a-flask-api-38051388f8cc)
 from flask import redirect, render_template, request, session
 from sqlalchemy import text                             # needed in new versions of SQLAlchemy, including the version I have (source: https://hy-tsoha.github.io/materiaali/osa-2/)
 from flask_sqlalchemy import SQLAlchemy
@@ -10,7 +9,6 @@ from jinja2 import Environment
 import secrets                                          # for generating csrf token after login
 
 app = Flask(__name__)
-# CORS(app, origins=['https://maps.googleapis.com/maps/api/mapsjs/gen_204?csp_test=true'])                                               # needed for allowing CORS to maps.googleapis.com... CORS = cross-origin resource sharing (https://medium.com/@mterrano1/cors-in-a-flask-api-38051388f8cc)
 # app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/)
 app.config["SQLALCHEMY_DATABASE_URI"] = getenv("DATABASE_URL").replace("://", "ql://", 1) # NB! FOR fly.io BUILD! See course material (https://hy-tsoha.github.io/materiaali/osa-3/)
 

@@ -1,10 +1,15 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
-Now the application can be used at 'https://dinerappthing.fly.dev/'. Note! AdBlockers can prevent normal function, including CORS
+### for online testing!
+Now the application can be used at 'https://dinerappthing.fly.dev/'. Note! Ad blockers like uBlocker can prevent normal function, including CORS
 functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
 that only happens when using adblocker.
 
-If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants, add new categories, hide and delete old ones, and toggle visibility of ratings and comments.
+If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants to users, add new categories, hide and delete old categories, and toggle visibility of each rating and comment separately.
+
+Currently, I've only added a few places on the map to conserve my limited free Google Places API. It's possible to add more, and not just restaurants either, in the admin page (/admin) but only if you have the admin password, of course.
+
+### general
 
 A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
@@ -46,8 +51,9 @@ See schema.sql
 - restaurant_categories: id  restaurant_id   category            category_visible
 
 ## WIP: premature manual (planning)
-### AFTER GIT CLONING:
+### AFTER GIT CLONING, IF YOU WANT TO LOOK AT THIS LOCALLY INSTEAD OF JUST TESTING AT https://dinerappthing.fly.dev/:
 - run 'pip install requirement.txt' to install all the dependencies
+- row 12 and 13 (could change!) of 'app.py': # app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/); un-comment this one, and comment out the next one, if you want to run this locally with 'run flask'!
 - schema.sql has the list of PostgreSQL commands to be run to CREATE the necessary tables for the app:
     * 'psql < schema.sql' to execute the commands. In my case, I have to copy the schema.sql to my root/var/lib/postgresql, then 'su - \[userhere\]' -> input password for that user -> 'psql < schema.sql', every time, ((( see next line )))
 (((- I personally installed PostgreSQL in ubuntu 22 by 'apt install postgresql', then 'sudo passwd \[userhere\]' -> create password for that user. Every time I want to access PostgreSQL, 'su - \[userhere\]' -> input password -> 'psql', which by default puts me in root/var/lib/\[userhere\])))
