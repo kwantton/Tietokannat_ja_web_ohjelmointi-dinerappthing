@@ -1,9 +1,10 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
-Now the application can be tested in 'https://dinerappthing.fly.dev/admin'. Note! AdBlockers can prevent normal function, including CORS
+Now the application can be used at 'https://dinerappthing.fly.dev/'. Note! AdBlockers can prevent normal function, including CORS
 functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
 that only happens when using adblocker.
-I have not yet tested if the restaurant map page is ok.
+
+If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants, add new categories, hide and delete old ones, and toggle visibility of ratings and comments.
 
 A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
@@ -31,6 +32,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] major refactorization of visibility toggling in 'app.py', saving about 100 rows of space (repetition out of the window)
 - [x] admin can permanently DELETE categories (in addition to disabling them), and in case of a successful DELETE, the respective category with its associated buttons are "display.style = none"'d -> no need to refresh.
 - [x] csrf_token for every POST, UPDATE or DELETE -kind of form, checking according to session.csrf_token in app.py
+- [x] deployed in fly.io, testable at "https://dinerappthing.fly.dev/"! You can create a new account, look at the restaurant map, write comments and ratings, etc. I currently have only a couple so that I don't run out of my free Google Places API.
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
