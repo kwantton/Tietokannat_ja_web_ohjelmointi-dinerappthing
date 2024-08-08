@@ -1,13 +1,13 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
 ### for online testing!
-Now the application can be used at 'https://dinerappthing.fly.dev/'. Note! Ad blockers like uBlocker can prevent normal function, including CORS
+Now the application can be used at https://dinerappthing.fly.dev/. Note! Ad blockers like uBlocker can prevent normal function, including CORS
 functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
 that only happens when using adblocker.
 
 If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants to users, add new categories, hide and delete old categories, and toggle visibility of each rating and comment separately.
 
-Currently, I've only added a few places on the map to conserve my limited free Google Places API. It's possible to add more, and not just restaurants either, in the admin page (/admin) but only if you have the admin password, of course.
+Currently, I've only added a few places on the map to conserve my limited free Google Places API.  It's possible to add more, and not just restaurants, in the admin page (/admin) but only if you have the admin password, of course.
 
 ### general
 
@@ -26,8 +26,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] possible for users to add comments and ratings
 - [x] admin can delete comments and ratings given by users (when they are clearly spam etc.)
 - [x] restaurant search (textbox search based on name OR place categories and description)
-- [x] rating list; top restaurants
-- [x] a user can search restaurants from the SQL database based on words of the desription / name
+- [x] rating list; top restaurants, with another search box based on this list's restaurants' names
 - [x] add timestamps after comments and ratings
 - [x] restaurant categories are stored in DB, fetched from DB, using both admin-managed custom categories and descriptions fetched from the Places API
 - [x] admin can toggle the visibility of each category (like 'asian' or 'thai') for each restaurant (i.e., admin can remove and reapply descriptions of each restaurant)
@@ -50,9 +49,9 @@ See schema.sql
 - comments:      id      user_id             restaurant_id       comment             visible         created_at
 - restaurant_categories: id  restaurant_id   category            category_visible
 
-## WIP: premature manual (planning)
-### AFTER GIT CLONING, IF YOU WANT TO LOOK AT THIS LOCALLY INSTEAD OF JUST TESTING AT https://dinerappthing.fly.dev/:
-- run 'pip install requirement.txt' to install all the dependencies
+
+## AFTER GIT CLONING, do these if you want to test this locally instead of at https://dinerappthing.fly.dev/:
+- run 'pip install requirements.txt' to install all the dependencies
 - row 12 and 13 (could change!) of 'app.py': # app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/); un-comment this one, and comment out the next one, if you want to run this locally with 'run flask'!
 - schema.sql has the list of PostgreSQL commands to be run to CREATE the necessary tables for the app:
     * 'psql < schema.sql' to execute the commands. In my case, I have to copy the schema.sql to my root/var/lib/postgresql, then 'su - \[userhere\]' -> input password for that user -> 'psql < schema.sql', every time, ((( see next line )))
@@ -61,13 +60,9 @@ See schema.sql
     * in .env:
         * DATABASE_URL=postgresql:///\[your_postgresql_user_here\]
         * SECRET_KEY=\[for example in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key here\]
+        * these are for the db, see below for the rest of the .env vars you have to set up!
 
-### gitignore
--.env
--.__pycache__
--venv
-
-### env vars
+### (1) env vars
 - for example, to set the SECRET_KEY, in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key
 - set DATABASE_URL=postgresql:///\[your_user_here\]
 - ADMIN_PASSWORD should be set raw; in English, do not use hashing for the actual password string; instead type the ADMIN_PASSWORD as-is
@@ -77,7 +72,7 @@ GOOGLE_API_KEY: I'm using google api for the map services. For that, you'll need
     - Maps JavaScript API in your Google Cloud settings, 
 you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand anything :p
 
-### Google Maps API
+### (2) Google Maps API
 First, see the GOOGLE_API_KEY above.
 Here are some manuals regarding how I set up the thing:
 - https://developers.google.com/maps/documentation/javascript/adding-a-google-map#maps_add_map-html adding a Google Map
@@ -89,8 +84,11 @@ Here are some manuals regarding how I set up the thing:
 ### other stuff
 - star rating shenanigans: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_star_rating
 
-### requirements.txt contents (i.e., dependencies)
-- after git cloning onto your computer, run 'pip install requirement.txt' to install all the dependencies
+#### if you want to set up a psql db for fly.io, NB! You'll need a utf-8-based db instead of the default sql_ASCII-based db!
+Before connecting the app to the db-app, (1) connect to the db-app (2) create a psql db with utf-8 encoding (3) ONLY THEN connect to that db specifically. Otherwise you might have ascii-unrecognized characters in your db, such as é (café) or @ (all the user emails)
+
+#### requirements.txt contents (i.e., dependencies)
+- after git cloning onto your computer, run 'pip install requirements.txt' to install all the dependencies
 - (((whenever a new 'pip install \[x\]' is done, run pip freeze > requirements.txt to update this dependency list to include \[x\] also)))
 - list of requirements:
 * Flask: for web dev with Python: Python micro web dev environment
@@ -101,3 +99,8 @@ Here are some manuals regarding how I set up the thing:
 * python-dotenv: environment variables for python, you guessed it
 * gunicorn: for fly.io, production dev (internet)
 * Werkzeug: comes with Flask, for example generate_password_hash and check_password_hash are from this library
+
+#### gitignore
+- .env
+- .__pycache__
+- venv
