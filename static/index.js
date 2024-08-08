@@ -137,6 +137,7 @@ async function initMap(apiServices, starRating) {
             // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
             
             const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
+            const filtered_comments_for_restaurant = ratings_for_restaurant.filter(item => item.comment_visible) // for the table 'comments', it's just 'visible', not comment_visible
             const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
             let starRatingHTML
             
@@ -145,8 +146,9 @@ async function initMap(apiServices, starRating) {
               : starRatingHTML = ''
             
             let noCommentsYetHTML = ''
+            if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML'>no comments yet</p>`}
             let commentHTML = '<ul id="comment-HTML"></ul>'
-            if (filtered_ratings_for_restaurant.length !== 0) {
+            if (filtered_ratings_for_restaurant.length !== 0 || filtered_comments_for_restaurant.length !== 0) {
               commentHTML = `
                   <ul id="comment-HTML">` + 
                     ratings_for_restaurant.map(item => {
@@ -164,7 +166,8 @@ async function initMap(apiServices, starRating) {
                     }).join('') + // map returns an array (i.e., [something, something]), so here I'm converting it to string -> commentHTML += this string c:
                   '</ul>'
             } else {
-              noCommentsYetHTML = `<p id='no-comments-HTML'>no comments yet</p>`
+              console.log("ei ollut kommentteja EIKÄ ratingsejä!")
+              // pass
             }    
             // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
 
@@ -207,7 +210,9 @@ async function initMap(apiServices, starRating) {
                   <ul id='descriptions-html'>${descriptionsHTML}</ul>
                   <h2>comments</h2>
                   <p>
-                    ${filtered_ratings_for_restaurant.length} review${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}
+                    ${filtered_ratings_for_restaurant.length !== 0
+                      ? `${filtered_ratings_for_restaurant.length} rating${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}`
+                      : `<noratings>no star ratings yet</noratings>`}
                     ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''} <br>
                     ${starRatingHTML}
                   </p>
@@ -219,7 +224,6 @@ async function initMap(apiServices, starRating) {
                     : ` <p> As 'admin', you cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
                         <a href='/logout'>to logout</a>`
                   }
-                  
                   <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
             </div>
             `;
@@ -316,6 +320,7 @@ async function initMap(apiServices, starRating) {
                         console.log({data})
                         const addedComment = usersFeedback(body.comment, rating)
                         document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                        document.querySelector('noratings').style.display = 'none'
                         if(noCommentsYetHTML) { // if it's not ''
                           document.querySelector('#no-comments-HTML').style.display = 'none' // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
                         } else {
