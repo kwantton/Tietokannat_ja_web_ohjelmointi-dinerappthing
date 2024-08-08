@@ -143,7 +143,9 @@ async function initMap(apiServices, starRating) {
             filtered_ratings_for_restaurant.length !== 0
               ? starRatingHTML = starRating(rating_average)
               : starRatingHTML = ''
-            let commentHTML
+            
+            let noCommentsYetHTML = ''
+            let commentHTML = '<ul id="comment-HTML"></ul>'
             if (filtered_ratings_for_restaurant.length !== 0) {
               commentHTML = `
                   <ul id="comment-HTML">` + 
@@ -156,13 +158,13 @@ async function initMap(apiServices, starRating) {
                                   (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
                               </p>
                           </li>`
-                      } else {
-                          return ''
-                      }
-                    }).join('') + 
+                    } else {
+                      return ''
+                    }
+                    }).join('') + // map returns an array (i.e., [something, something]), so here I'm converting it to string -> commentHTML += this string c:
                   '</ul>'
             } else {
-                commentHTML = '<p>no comments yet</p>'
+              noCommentsYetHTML = `<p id='no-comments-HTML'>no comments yet</p>`
             }    
             // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
 
@@ -209,7 +211,8 @@ async function initMap(apiServices, starRating) {
                     ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''} <br>
                     ${starRatingHTML}
                   </p>
-                  ${commentHTML                                                                                 /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
+                  ${noCommentsYetHTML}
+                  ${commentHTML /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
                   <h2> feedback </h2>
                   ${user !== 'admin'
                     ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
@@ -303,9 +306,9 @@ async function initMap(apiServices, starRating) {
                       } else {
                         //pass
                       }
-                      document.querySelector('#feedback-section').style.display='none'
-                      document.querySelector('#feedback-sent').style.display='inline-block'
-                      document.querySelector('#feedback-text').value='' // reset the text field. It's hidden anyway, thus doesn't really matter 
+                      document.querySelector('#feedback-section').style.display = 'none'
+                      document.querySelector('#feedback-sent').style.display = 'inline-block'
+                      document.querySelector('#feedback-text').value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
                       
                       try {
                         const response = await apiServices.post('/api/feedback/', body, csrfToken)
@@ -313,6 +316,11 @@ async function initMap(apiServices, starRating) {
                         console.log({data})
                         const addedComment = usersFeedback(body.comment, rating)
                         document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                        if(noCommentsYetHTML) { // if it's not ''
+                          document.querySelector('#no-comments-HTML').style.display = 'none' // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
+                        } else {
+                          // pass
+                        }
                       } catch (error) {
                         console.error(error)
                       }    
