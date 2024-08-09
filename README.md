@@ -1,13 +1,15 @@
 # diner app (ravintolasovellus) "dinerappthing"
 ## description
 ### for online testing!
-Now the application can be used at https://dinerappthing.fly.dev/. Note! Ad blockers like uBlocker can prevent normal function, including CORS
-functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
-that only happens when using adblocker.
+Now the application can be used at https://dinerappthing.fly.dev/.
 
 If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants to users, add new categories, hide and delete old categories, and toggle visibility of each rating and comment separately.
 
 Currently, I've only added a few places on the map to conserve my limited free Google Places API.  It's possible to add more, and not just restaurants, in the admin page (/admin) but only if you have the admin password, of course.
+
+Note! Ad blockers like uBlocker can prevent normal function, including CORS
+functionality. For example also Foodora app doesn't work if you have adblocker - I had the same problem, I also have another random problem
+that only happens when using adblocker.
 
 ### general
 

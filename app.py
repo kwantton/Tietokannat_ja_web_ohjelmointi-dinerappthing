@@ -385,8 +385,8 @@ def register():
             return render_template('error.jinja', message='username should be over 3 characters')
         elif username == 'admin':
             return render_template('error.jinja', message='username taken')
-        elif len(password1) < 4:
-            return render_template('error.jinja', message='password has to be at least 4 characters')
+        elif len(password1) < 8:
+            return render_template('error.jinja', message='password has to be at least 8 characters')
         else:
             sql = text('SELECT * from users WHERE username=:username')
             result = db.session.execute(sql, {'username':username})

@@ -166,7 +166,7 @@ async function initMap(apiServices, starRating) {
                     }).join('') + // map returns an array (i.e., [something, something]), so here I'm converting it to string -> commentHTML += this string c:
                   '</ul>'
             } else {
-              console.log("ei ollut kommentteja EIKÄ ratingsejä!")
+              // console.log("ei ollut kommentteja EIKÄ ratingsejä!")
               // pass
             }    
             // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
