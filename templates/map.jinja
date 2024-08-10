@@ -7,7 +7,7 @@
 
 
     
-    <div id="map-search-name"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+    <div id="map-search-name"> <!-- for searching restaurants above in the map -->
         <h3> name search from places on the map </h3>
         <p> press enter to update the search </p>
         <input name="search-query" onchange="mapSearch(event)">        <!-- onchange is activated every time you push enter -->
@@ -34,7 +34,7 @@
         </script>
     </div>
 
-    <div id="map-search-descriptions"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
+    <div id="map-search-descriptions"> <!-- for searching restaurants above in the map -->
         <h3> category search from places on the map </h3>
         <p> press enter to update the search </p>
         <input name="search-query" onchange="descriptionsSearch(event)">        <!-- onchange is activated every time you push enter -->
@@ -78,7 +78,7 @@
             const search = event => {
                 const query = event.currentTarget.value.toLowerCase()
                 
-                const restaurantDiv = document.querySelectorAll('#restaurant-div-element') // each of these (see below) has <h3> and <ul> with 2 <li>s
+                const restaurantDiv = document.querySelectorAll('.restaurant-div-element') // each of these (see below) has <h3> and <ul> with 2 <li>s
                 restaurantDiv.forEach(infoElement => {
                     infoElement.querySelectorAll('h3').forEach(header => {
                         if (query.length>50) {
@@ -139,7 +139,7 @@
 
                 placeId_placeInfo.forEach(restaurantJSON => {
                     const restaurantDivElement = document.createElement('div')
-                    restaurantDivElement.id = 'restaurant-div-element'
+                    restaurantDivElement.classList.add('restaurant-div-element')
 
                     // below, innerHTML would be usable as well, but that would enable script injection - textContent in JS is safe, since even if you write <script> there, it won't be interpreted as JS.
                     const nameElement           =   document.createElement('h3')
@@ -147,8 +147,8 @@
                     const averageElement        =       document.createElement('li')
                     const addressElement        =       document.createElement('li')
 
-                    averageElement.id = 'average-element' // for the search function way above
-                    addressElement.id = 'address-element'
+                    averageElement.classList.add('average-element') // for the search function way above
+                    addressElement.classList.add('address-element')
 
                     nameElement.textContent = restaurantJSON.restaurant_name
                     averageElement.textContent = restaurantJSON.nRatings === 0 
@@ -161,16 +161,18 @@
                     restaurantUlElement.appendChild(averageElement)
                     restaurantUlElement.appendChild(addressElement)
 
-                    // potential safety risk if admin is mean and adds to restaurant list some weird HTML
+                    // no XSS risk here, as everything is "textContent" instead of innerHTML. ALSO; I could use static/safeHTML.js here, but I already wrote all this code before coming up with the safeHTML function, so...
                     infoHTML.appendChild(restaurantDivElement)
-                } )
+
+                    // the restaurantHTML below, without the `` that converts it to string, returns a <div>, so that I can actually appendChild(<div>...</div>) here! I have to convert it to string so I can
+                })
                 document.querySelector('#ranked-restaurants').appendChild(infoHTML) // this just adds the infoHTML <ul> with all the <li>'s (restaurants in order) to the end of the <body> of this HTML
             </script>
         </ul>
     </div>
 
     <!-- prettier-ignore -->
-    <!-- NB! This below is from Google Places API instructions - no idea what all the things here do! This is needed for the map! -->
+    <!-- NB! This below is copy-pasted from Google Places API instructions - no idea what all the things here do! This is needed for the map, obviously. -->
     <script>(g=>{
         var h,a,k,p="The Google Maps JavaScript API",
         c="google",
@@ -198,8 +200,8 @@
         ({key: "{{ key }}", v: "weekly"});
     </script> <!-- note the "{{ key }} above!"; this is normal Jinja syntax to pass the Google Cloud API key passed here from app.py (through the render_template). -->
     
-    <!-- NB! My actual map JS is loaded here: -->
+    <!-- NB! My actual 'index.js' map JS is execute here: -->
     <script type="module" src=" {{ url_for ('static', filename='index.js') }}"></script>            
-    <!-- Above, I load 'index.js' to be run. It has all the actual logic for the map. I thought it might be a bit faster to load this big js here below the actual (?) map script above, but it doesn't seem to matter regarding the loading time of the page for the user. -->
+    <!-- Above, I load 'index.js' to be run. It has all the actual logic for the map. I thought it might be a bit faster to load this big js here below the actual map script above, but it doesn't seem to matter regarding the loading time of the page for the user. -->
 
 {% endblock %}

@@ -53,7 +53,6 @@ async function initMap(apiServices, starRating) {
 
     const restaurant_id_from_db = location.id
 
-
     // QUERY to the Places API
     service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) { // if status is OK AND results exist (i.e., not null or undefined or whatever, which also would be interpreted as FALSE)
@@ -74,7 +73,7 @@ async function initMap(apiServices, starRating) {
             markerContainer.style.flexDirection = 'column'
             markerContainer.style.alignItems = 'center'
             markerContainer.id = 'marker-container'                   // for the search box above the map; these markers are what I want to show / hide based on the search query
-            
+
             // creating the markerElement and making it pretty (more in 'style.css')
             const markerElement = document.createElement('div');            
             markerElement.className = 'custom-marker';

@@ -330,8 +330,6 @@ def restaurants():
         return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
     except Exception as e:
         print("ERROR in route '/map' when trying to fetchall() from all restaurants:", e)
-    
-    
 
 @app.route('/login', methods=['POST'])
 def login():
