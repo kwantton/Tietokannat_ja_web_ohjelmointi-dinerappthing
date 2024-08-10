@@ -212,7 +212,7 @@ async function initMap(apiServices, starRating) {
                     ${filtered_ratings_for_restaurant.length !== 0
                       ? `${filtered_ratings_for_restaurant.length} rating${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}`
                       : `<noratings>no star ratings yet</noratings>`}
-                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5` : ''} <br>
+                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5 <br>` : ''} 
                     ${starRatingHTML}
                   </p>
                   ${noCommentsYetHTML}
@@ -224,6 +224,7 @@ async function initMap(apiServices, starRating) {
                         <a href='/logout'>to logout</a>`
                   }
                   <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
+                </div>
             </div>
             `;
             // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
@@ -318,13 +319,9 @@ async function initMap(apiServices, starRating) {
                         const data = await response.json()
                         console.log({data})
                         const addedComment = usersFeedback(body.comment, rating)
-                        document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                        document.querySelector('noratings') && (document.querySelector('noratings').style.display = 'none') // if <noratings> exists; that's what the "&&" is for: only if the left side is not null or undefined, the right side is executed!
-                        if(noCommentsYetHTML) { // if it's not ''
-                          document.querySelector('#no-comments-HTML').style.display = 'none' // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
-                        } else {
-                          // pass
-                        }
+                        document.querySelector('#comment-HTML').appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                        document.querySelector('noratings')?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
+                        document.querySelector('#no-comments-HTML')?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
                       } catch (error) {
                         console.error(error)
                       }    

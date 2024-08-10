@@ -17,4 +17,4 @@ const post = async (url, body, csrf_token) => {
     return response
 }
 
-export default { getAll, post } // export a JSON object (like a Python map), so each function is usable as 'x.get' and 'x.post' in the destination after you import this JSON as 'x'
+export default { getAll, post } // export a single JSON object (like a Python map), so each function is usable as 'x.get' and 'x.post' in the destination after you import this JSON as 'x'. Taught in FullStack course.

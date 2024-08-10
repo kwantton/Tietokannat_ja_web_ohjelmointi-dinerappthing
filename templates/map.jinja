@@ -189,7 +189,7 @@
             for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),
             g[k]);
             e.set("callback",c+".maps."+q);
-            a.src=`https://maps.${c}apis.com/maps/api/js?`+e;
+            a.src=`https://maps.${c}apis.com/maps/api/js?`+e; // note! This fails sometimes! "CORS same origin policy" is the reason
             d[q]=f;
             a.onerror=()=>h=n(Error(p+" could not load."));
             a.nonce=m.querySelector("script[nonce]")?.nonce||"";
