@@ -319,7 +319,7 @@ async function initMap(apiServices, starRating) {
                         console.log({data})
                         const addedComment = usersFeedback(body.comment, rating)
                         document.querySelector('#comment-HTML').appendChild(addedComment) // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                        document.querySelector('noratings').style.display = 'none'
+                        document.querySelector('noratings') && (document.querySelector('noratings').style.display = 'none') // if <noratings> exists; that's what the "&&" is for: only if the left side is not null or undefined, the right side is executed!
                         if(noCommentsYetHTML) { // if it's not ''
                           document.querySelector('#no-comments-HTML').style.display = 'none' // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
                         } else {

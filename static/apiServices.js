@@ -11,6 +11,7 @@ const post = async (url, body, csrf_token) => {
             'Content-Type':'application/json',
             'X-CSRF-Token':csrf_token,
         }, 
+        credentials:'same-origin', // "A string indicating whether credentials will be sent with the request always, never, or only when sent to a same-origin URL. Sets request's credentials." So, with this, it only sends the csrf in the case of same origin, not otherwise.
         body:JSON.stringify(body)
     })
     return response

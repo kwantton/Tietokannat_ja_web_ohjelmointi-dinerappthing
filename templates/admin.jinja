@@ -12,7 +12,8 @@
             console.log(`toggle visibility for the following target: table '${target}', id ${id}`)
             fetch(`${baseUrl}/api/toggle-visibility-of/${target}/${id}`, { 
                 method:'PUT',
-                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
+                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' },
+                credentials:'same-origin'
             })
             .then(response => response.json())
             .then(data => {
@@ -24,7 +25,8 @@
         const deleteCategory = categoryId => {
             fetch(`${baseUrl}/api/delete-category/${categoryId}`, {
                 method:'DELETE', 
-                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' }
+                headers:{'X-CSRF-Token': '{{ session.csrf_token }}' },
+                credentials:'same-origin'
                 })
             .then(response => response.json())
             .then(data => {
