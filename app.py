@@ -11,7 +11,7 @@ import secrets                                          # for generating csrf to
 app = Flask(__name__)
 where = getenv('WHERE')
 if where == 'local':
-    # app.config is for global variables. I tried session['WHERE'] = 'local', but that doesn't work; you can only set session['x'] from a request: "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it only exists when a request is being processed. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing."
+    # app.config is for global variables. I tried session['WHERE'] = 'local', but that doesn't work here!; you can only set session['x'] from a app.route(...): "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it only exists when a request is being processed. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing." -ChatGPT
     app.config['WHERE'] = 'local' 
     app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/)
 elif where == 'fly.io':
@@ -66,7 +66,7 @@ def delete_category_id(category_id):
     db.session.commit()
     return jsonify({'status':'ok', 'message':'DELETE ok'})
 
-@app.route('/api/toggle-visibility-of/<table>/<int:id>/', methods=['PUT']) # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
+@app.route('/api/toggle-visibility-of/<table>/<int:id>', methods=['PUT']) # for example, target = 'restaurants', id = 1. There's no str:, so it's just <table>, not <str:table>, as I learned when asking about the problem from my old friend Chat Gavin Pierre Taurus (thanks, ChatGPT :D)
 def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_id, or comment_id
     csrf_token = request.headers.get('X-CSRF-Token')
     if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser if you try hiding/showing a restaurant, category, comment or rating c:
@@ -74,6 +74,7 @@ def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_
     try:
         # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...). table_name_check raises a valueError if you're trying to access anything else than these four, stopping the rest of the code from executing
         table_name_check(table)
+        
         visibility_column_names = dict(zip('comments restaurants restaurant_categories ratings'.split(), 'visible restaurant_visible category_visible rating_visible'.split()))
         column_name = visibility_column_names[table]
         

@@ -65,7 +65,7 @@ See schema.sql
         * these are for the db, see below for the rest of the .env vars you have to set up!
 
 ### (1) env vars
-- WHERE = 'local' if you are running locally ('flask run', when in venv, to run the app locally). If WHERE is 'local', then in layout.jinja, there is no <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"></meta>, which enforces https always when deployed online. When running in fly.io, WHERE = 'fly.io', and this enables this <meta></meta> html, enforcing https: everywhere. This is to prevent mix-and match of http and https, which would result in error in the browser (this happened before adding the <meta></meta>)
+- WHERE = 'local' if you are running locally ('flask run', when in venv, to run the app locally). If WHERE is 'local', then in layout.jinja, there is no \<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">\</meta>, which enforces https always when deployed online. When running in fly.io, WHERE = 'fly.io', and this enables this \<meta>\</meta> html, enforcing https: everywhere. This is to prevent mix-and match of http and https, which would result in error in the browser (this happened before adding the \<meta>\</meta>)
 - for example, to set the SECRET_KEY, in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key
 - set DATABASE_URL=postgresql:///\[your_user_here\]
 - ADMIN_PASSWORD should be set raw; in English, do not use hashing for the actual password string; instead type the ADMIN_PASSWORD as-is

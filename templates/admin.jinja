@@ -4,7 +4,6 @@
 {% block content %}
 
 {% if session.username == 'admin' %}
-
     <!-- the beauty of a <script> without type="module" is that now these functions below are available in the whole HTML document with no further hassle. -->
     <script>
         const baseUrl = `${window.location.protocol}//${window.location.host}`  // this ensures that both http:// (local) and https:// (fly.io) work; so https: would be 'protocol', and 'dinerappthing.fly.dev' would be the host
@@ -227,7 +226,9 @@
         }
     })
     </script>
-    
+    <script>
+        // alert(`session.csrf_token: '{{ session.csrf_token }}'`) // this was for checking
+    </script>
 {% else %}
     <p>You are not logged in as the administrator. You seem sus.</p>
 {% endif %}
