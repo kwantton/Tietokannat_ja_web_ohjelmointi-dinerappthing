@@ -4,7 +4,6 @@ import starRating from "./starRating.js";
 import usersFeedback from "./usersFeedback.js";
 import safeHTML from "./safeHTML.js";
 
-
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
 let data1 = await apiServices.getAll('/api/sessionuser') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
@@ -38,9 +37,7 @@ async function initMap(apiServices, starRating) {
     mapId: "DEMO_MAP_ID",
   });
 
-  const response = await fetch('/api/restaurants')  // accessing 'restaurants' (sql db table) directly here in 'index.js'.
-  const data = await response.json()                // "data" is the common way of naming response.json()...
-  const json_of_locations = data                    // ... but just renaming for clarity c: this is the json with id:x, name:string, address:string that I made in app.py c:
+  const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
   const service = new PlacesService(map)
 
   // const geocoder = new Geocoder();               // this is not what I wanna use anymore, since based on address-based location alone this results in too rough lng and lat for the diners, and stacks different diners on top of each other (=in the same lng and lat) if multiple are located within the same building! Not great c:

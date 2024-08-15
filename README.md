@@ -52,19 +52,20 @@ See schema.sql
 - restaurant_categories: id  restaurant_id   category            category_visible
 
 
-## AFTER GIT CLONING, do these if you want to test this locally instead of at https://dinerappthing.fly.dev/:
+## AFTER GIT CLONING, you MUST DO these if you want to test this locally instead of at https://dinerappthing.fly.dev/:
 - run 'pip install requirements.txt' to install all the dependencies
-- row 12 and 13 (could change!) of 'app.py': # app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/); un-comment this one, and comment out the next one, if you want to run this locally with 'run flask'!
+- very important: if running locally, set in .env the 'WHERE' as 'local'. See more in section (1) env vars, below, which lists all the .env contents.
 - schema.sql has the list of PostgreSQL commands to be run to CREATE the necessary tables for the app:
     * 'psql < schema.sql' to execute the commands. In my case, I have to copy the schema.sql to my root/var/lib/postgresql, then 'su - \[userhere\]' -> input password for that user -> 'psql < schema.sql', every time, ((( see next line )))
 (((- I personally installed PostgreSQL in ubuntu 22 by 'apt install postgresql', then 'sudo passwd \[userhere\]' -> create password for that user. Every time I want to access PostgreSQL, 'su - \[userhere\]' -> input password -> 'psql', which by default puts me in root/var/lib/\[userhere\])))
 - on this coure, PostgreSQL is used:
-    * in .env:
+    * in .env, regarding PostgreSQL:
         * DATABASE_URL=postgresql:///\[your_postgresql_user_here\]
         * SECRET_KEY=\[for example in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key here\]
         * these are for the db, see below for the rest of the .env vars you have to set up!
 
 ### (1) env vars
+- WHERE = 'local' if you are running locally ('flask run', when in venv, to run the app locally). If WHERE is 'local', then in layout.jinja, there is no <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"></meta>, which enforces https always when deployed online. When running in fly.io, WHERE = 'fly.io', and this enables this <meta></meta> html, enforcing https: everywhere. This is to prevent mix-and match of http and https, which would result in error in the browser (this happened before adding the <meta></meta>)
 - for example, to set the SECRET_KEY, in python3 you can run "import secrets"; "secrets.token_hex(16)"; copy-paste the generated key
 - set DATABASE_URL=postgresql:///\[your_user_here\]
 - ADMIN_PASSWORD should be set raw; in English, do not use hashing for the actual password string; instead type the ADMIN_PASSWORD as-is
@@ -72,6 +73,7 @@ GOOGLE_API_KEY: I'm using google api for the map services. For that, you'll need
 - a 39-character (or the like) API Key from Google Cloud. With that set as the GOOGLE_API_KEY environment variable, AND 
 - when you enable 
     - Maps JavaScript API in your Google Cloud settings, 
+    - Places API also in your Google Cloud settings,
 you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand anything :p
 
 ### (2) Google Maps API
@@ -86,8 +88,8 @@ Here are some manuals regarding how I set up the thing:
 ### other stuff
 - star rating shenanigans: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_star_rating
 
-#### if you want to set up a psql db for fly.io, NB! You'll need a utf-8-based db instead of the default sql_ASCII-based db!
-Before connecting the app to the db-app, (1) connect to the db-app (2) create a psql db with utf-8 encoding (3) ONLY THEN connect to that db specifically. Otherwise you might have ascii-unrecognized characters in your db, such as é (café) or @ (all the user emails)
+#### if you want to set up a psql db for fly.io, NB!!! You'll need a utf-8-based db instead of the default sql_ASCII-based db!
+Before connecting the app (dinerapp) to the db-app, (1) connect to the db-app (2) create a psql db with utf-8 encoding (3) ONLY THEN connect to that db specifically. Otherwise you might have ascii-unrecognized characters in your db, such as é (café) or @ (all the user emails)
 
 #### requirements.txt contents (i.e., dependencies)
 - after git cloning onto your computer, run 'pip install requirements.txt' to install all the dependencies

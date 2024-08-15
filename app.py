@@ -9,16 +9,48 @@ from jinja2 import Environment
 import secrets                                          # for generating csrf token after login
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/)
-app.config["SQLALCHEMY_DATABASE_URI"] = getenv("DATABASE_URL").replace("://", "ql://", 1) # NB! FOR fly.io BUILD! See course material (https://hy-tsoha.github.io/materiaali/osa-3/)
+where = getenv('WHERE')
+if where == 'local':
+    # app.config is for global variables. I tried session['WHERE'] = 'local', but that doesn't work; you can only set session['x'] from a request: "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it only exists when a request is being processed. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing."
+    app.config['WHERE'] = 'local' 
+    app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL') # NB! FOR LOCAL BUILD!, see material (https://hy-tsoha.github.io/materiaali/osa-3/)
+elif where == 'fly.io':
+    app.config['WHERE'] = 'fly.io'
+    app.config["SQLALCHEMY_DATABASE_URI"] = getenv("DATABASE_URL").replace("://", "ql://", 1) # NB! FOR fly.io BUILD! See course material (https://hy-tsoha.github.io/materiaali/osa-3/)
 
 db = SQLAlchemy(app)
 app.secret_key = getenv('SECRET_KEY')
 admin_password = getenv('ADMIN_PASSWORD')
 API_key = getenv('GOOGLE_API_KEY')
 
+# this probably is not actually needed for the .jinja-extension handling.
 env = Environment(loader=FileSystemLoader('templates'))
 env.add_extension('jinja2.ext.loopcontrols')
+
+# below, SECURITY CHECK: prevention of SQL injection (NB! ':table' can not be done! Hence I have to manually make sure no-one's trying an SQL injection. See below...)
+# Why not :table? Because it's not allowed to use a variable for the table name! Tried that: 'In SQL, using placeholders for table names or column names in parameterized queries doesn't work because placeholders can only be used for values, not for SQL identifiers (like table names or column names). This is why your table name is being surrounded by quotes and treated as a string literal, not as a table name.' (ChatGPT). So yeah, I had that problem
+def table_name_check(table):
+    allowed_tables = {'restaurants','restaurant_categories','ratings','comments', 'users'}
+    if table not in allowed_tables:
+        raise ValueError("Invalid table name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list of table_name_check first!")
+    
+def visible_column_name_check(column_name):
+    allowed_names = {'visible','restaurant_visible','rating_visible','category_visible'}
+    if column_name not in allowed_names:
+        raise ValueError("Invalid column name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list of visible_column_name_check first!")
+
+def select_all(table, visible_column=None):
+    # ':table' or ':visible' can not be done in text(...), hence I'm using the check function 'table_name_check' to check if a valid table is being accessed. If not, it raises ValueError
+    table_name_check(table)
+    if visible_column:
+        visible_column_name_check(visible_column)
+        # in table 'comments', the column name is just 'visible', in others, it's 'restaurant_visible', etc. - hence the name is given as a parameter to select_all
+        sql = text(f'SELECT * FROM {table} WHERE {visible_column}') 
+    if not visible_column:
+        sql = text(f'SELECT * FROM {table}')
+    result = db.session.execute(sql, {'visible_column':visible_column})
+    rows = result.fetchall()
+    return rows
 
 @app.route('/')
 def index():
@@ -40,10 +72,8 @@ def toggle_visibility_of(table, id): # category_id, or restaurant_id, or rating_
     if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser if you try hiding/showing a restaurant, category, comment or rating c:
         return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     try:
-        # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...)
-        allowed_tables = {'restaurants','restaurant_categories','ratings','comments'}
-        if table not in allowed_tables:
-            raise ValueError("Invalid table name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list!")
+        # SECURITY CHECK: prevention of SQL injection (NB! ':table' is not doable (read next comment); hence I have to manually make sure no-one's trying an SQL injection. See below...). table_name_check raises a valueError if you're trying to access anything else than these four, stopping the rest of the code from executing
+        table_name_check(table)
         visibility_column_names = dict(zip('comments restaurants restaurant_categories ratings'.split(), 'visible restaurant_visible category_visible rating_visible'.split()))
         column_name = visibility_column_names[table]
         
@@ -181,7 +211,8 @@ def add_a_restaurant():
 
 @app.route('/admin')
 def admin():
-    # I need to have comments.id and ratings.id so I can conveniently toggle visibility of COMMENT and remove RATING; both need their own id. That's why I have to get specific below... sigh
+    session['where'] = app.config.get('WHERE')
+    # I need to have comments.id and ratings.id so I can conveniently toggle visibility of COMMENT and remove RATING; both need their own id. That's why I have to get specific below, 'AS comment_id', 'AS rating_id'
     sql = text('''
                 SELECT 
                     restaurants.id AS restaurant_id, 
@@ -216,17 +247,10 @@ def admin():
     ratings_with_comments = result.fetchall()
     ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'rating_id':row.rating_id, 'comment':row.comment, 'comment_visible':row.comment_visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]
     
-    sql = text('''SELECT * FROM restaurants;''')
-    result = db.session.execute(sql)
-    restaurants = result.fetchall()
-
-    sql = text('''SELECT * FROM restaurant_categories;''') # if I were to left join with restaurants here, I'd get a list with the same restaurant a million times, and then I'd have to check if restaurant id matches the category's restaurant_id anyways - instead Imma just check in 'admin.jinja' ONCE for each category whether restaurant.id == category.restaurant_id, much more convenient!
-    result = db.session.execute(sql)
-    restaurant_categories = result.fetchall()
-    
-    sql = text('''SELECT * FROM users;''')
-    result = db.session.execute(sql)
-    users = result.fetchall()
+    # if I were to left join with restaurants here, I'd get a list with the same restaurant a million times, and then I'd have to check if restaurant id matches the category's restaurant_id anyways in Jinja or JS - instead Imma just check in 'admin.jinja' ONCE for each category whether restaurant.id == category.restaurant_id, much more convenient!
+    users = select_all('users')
+    restaurants = select_all('restaurants')
+    restaurant_categories = select_all('restaurant_categories')
     return render_template('admin.jinja', ratings_with_comments_list=ratings_with_comments_list, restaurants=restaurants, users=users, restaurant_categories=restaurant_categories)
 
 @app.route('/api/feedback/', methods=['POST'])
@@ -239,7 +263,7 @@ def feedback():
     if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser c:
             return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     print('username (from session):', username)
-    result = db.session.execute(text('SELECT * FROM users WHERE users.username = :username;'), {'username':username})
+    result = db.session.execute(text('SELECT * FROM users WHERE username = :username;'), {'username':username})
     row = result.fetchone()
     user_id = row.id
     
@@ -311,21 +335,19 @@ def get_map_token():
     print('map_token:', map_token)
     return jsonify({'map_token':map_token}) 
 
-@app.route('/api/restaurants') # in index.js, I'll be using this: 'const response = await fetch('/api/restaurants')
+# used in index.js
+@app.route('/api/restaurants-visible') 
 def get_restaurants_json():
-    sql = text('SELECT * FROM restaurants WHERE restaurant_visible;')
-    result = db.session.execute(sql)
-    restaurants = result.fetchall()
+    restaurants = select_all('restaurants', 'restaurant_visible')
     restaurants_list = [{'id': row.id, 'name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible,} for row in restaurants] # list of dicts: [{id:1, name:some diner, address:Eskontie 101 Jämsäputaa}, {id:2, name:Another Diner,....}]
     return jsonify(restaurants_list)
 
 @app.route('/map')
 def restaurants():
-    sql = text('SELECT * FROM restaurants WHERE restaurant_visible;')
+    session['where'] = app.config.get('WHERE')
     session['map_token'] = secrets.token_hex(16) # the purpose of this is to ensure that the request is coming from the exact same site. For updating the db information regarding restaurant name, address and (some) categories, it's independent of the user - it doesn't matter if a user is logged in or not.
     try:
-        result = db.session.execute(sql)
-        restaurants = result.fetchall()
+        restaurants = select_all('restaurants', 'restaurant_visible')
         restaurants = [{'id':row.id, 'restaurant_name':row.restaurant_name,'address':row.address, 'restaurant_visible':row.restaurant_visible} for row in restaurants]
         return render_template('map.jinja', key=API_key, restaurants=restaurants)    # actual google maps API in use here
     except Exception as e:
@@ -334,6 +356,7 @@ def restaurants():
 @app.route('/login', methods=['POST'])
 def login():
     session['csrf_token'] = secrets.token_hex(16)
+    session['where'] = app.config.get('WHERE')
     username = request.form['username']
     password = request.form['password']
 
@@ -369,6 +392,7 @@ def logout():
 # btw there's no point in csrf tokening this. All they can do is add a user, that's it.
 @app.route('/register', methods=['GET','POST'])         # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
 def register():
+    session['where'] = app.config.get('WHERE')
     if request.method == 'GET':
         return render_template('register.jinja')
     if request.method == 'POST':

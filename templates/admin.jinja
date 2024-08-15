@@ -13,7 +13,6 @@
             fetch(`${baseUrl}/api/toggle-visibility-of/${target}/${id}`, { 
                 method:'PUT',
                 headers:{'X-CSRF-Token': '{{ session.csrf_token }}' },
-                credentials:'same-origin'
             })
             .then(response => response.json())
             .then(data => {
@@ -26,7 +25,6 @@
             fetch(`${baseUrl}/api/delete-category/${categoryId}`, {
                 method:'DELETE', 
                 headers:{'X-CSRF-Token': '{{ session.csrf_token }}' },
-                credentials:'same-origin'
                 })
             .then(response => response.json())
             .then(data => {
