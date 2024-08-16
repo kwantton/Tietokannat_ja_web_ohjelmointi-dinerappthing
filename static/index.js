@@ -7,6 +7,7 @@ import safeHTML from "./safeHTML.js"
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
 // session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
+window.zIndex = 1000
 let data1 = await apiServices.getAll('/api/sessionuser') 
 const user = data1.session_user
 console.log(`user: "${user}"`)
@@ -27,15 +28,15 @@ async function initMap() {
   
   // Request needed Google libraries. These are from the google Cloud instruction pages
   //@ts-ignore
-  const { Map } = await google.maps.importLibrary("maps")
-  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker")
+  const { Map } = await google.maps.importLibrary('maps')
+  const { AdvancedMarkerElement } = await google.maps.importLibrary('marker')
   const { PlacesService } = await google.maps.importLibrary('places')     // this is for getting exact locations, since based on only address (and google Geocoder API), many diners would get placed into the wrong end of a larger building, AND they would be placed on top of each other
 
   // The map itself, centered at Kumpula region. The restaurants from SQL db are set below
-  map = new Map(document.getElementById("map"), { // note: in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
+  map = new Map(document.getElementById('map'), { // note: in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
     zoom: 15,
     center: kumpula_pos,
-    mapId: "DEMO_MAP_ID",
+    mapId: 'DEMO_MAP_ID',
   })
 
   const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
@@ -67,7 +68,7 @@ async function initMap() {
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
 
-            // this container element is needed so I can place the label  for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time
+            // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time
             const markerContainer = document.createElement('div')     // normal JS, creating a new HTML element
             markerContainer.style.display = 'flex'
             markerContainer.style.flexDirection = 'column'
@@ -126,9 +127,6 @@ async function initMap() {
             openNow 
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
               : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>'    // if not openNow, this row, with red text
-
-            
-            
             
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurantID}`)
@@ -152,17 +150,18 @@ async function initMap() {
                   <ul id="comment-HTML-${restaurantID}">` + 
                     ratings_for_restaurant.map(item => {
                       if (item.comment_visible || item.rating_visible) {
-                          return `<li>
+                          return `
+                            <li>
                               <p>
-                                  ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''} 
-                                  ${item.rating_visible ? `${item.rating}/5 <br>` : ''}
-                                  (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
+                                ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''} 
+                                ${item.rating_visible ? `${item.rating}/5 <br>` : ''}
+                                (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
                               </p>
-                          </li>`
+                            </li>`
                     } else {
                       return ''
                     }
-                    }).join('') + // map returns an array (i.e., [something, something]), so here I'm converting it to string -> commentHTML += this string c:
+                    }).join('') + // map returns an array (i.e., [something1, something2]), so here I'm converting it to string -> commentHTML += this string c:
                   '</ul>'
             } else {
               // console.log("ei ollut kommentteja EIKÄ ratingsejä!")
@@ -198,7 +197,7 @@ async function initMap() {
             // NB! There's not much user-originated HTML left to sanitize below, HOWEVER - placeDetails.name could be whatever. What if the name of the place has ' or < in it, for example? As for the others, 'placeDetails.x' are all derived from Google API, and commentHTML was checked already c:
               const infoWindowContent =
             ` 
-            <div id="info-window-content"> 
+            <div id="info-window-content-${restaurantID}"> 
                 <h1 id="firstHeading" class="firstHeading">${safeHTML(placeDetails.name)}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
                 ${starRatingHTML}
                 <div id="bodyContent">
@@ -239,22 +238,17 @@ async function initMap() {
                 'address': place.formatted_address,
                 'descriptions':sensible_descriptions
               }
-              
-              try {
-                const response = await apiServices.post('/api/update-name-address-categories', body, mapToken)
-                const data = await response.json()
-            
-                if (response.ok) {
-                  let updatedOrNot
-                  data.updated === ''
-                    ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
-                    :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
-                  console.log(updatedOrNot, data)
-                } else {
-                  console.error('Update failed:', data)
-                }
-              } catch (error) {
-                console.error('Error:', error)
+
+              const [response, data] = await apiServices.post('/api/update-name-address-categories', body, mapToken) // array destructuring
+          
+              if (response.ok) {
+                let updatedOrNot
+                data.updated === ''
+                  ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
+                  :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
+                console.log(updatedOrNot, data)
+              } else {
+                console.error(`Update for ${placeDetails.name} failed:`, data)
               }
             }
 
@@ -271,6 +265,11 @@ async function initMap() {
                 anchor: diner_marker,
                 map,
               })
+
+              // Bring the clicked InfoWindow to the front by increasing its z-index. The higher the z-index, the more 'front' the element is
+              const iwOuter = document.querySelector(`#info-window-content-${restaurantID}`);     // google maps style infowindow = gm-style-iw
+              iwOuter?.style.setProperty('zIndex', zIndex); // Adjust z-index to a higher value, then increment by one - to bring the just-clicked infoWindow to the front. I can't just "=" here because I'm using the optional chaining '?.', that prevents it.
+              zIndex++
 
               if(!eventListenedInfoWindows.includes(infowindow)) { // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
                 eventListenedInfoWindows.push(infowindow) // let's not add a million eventlisteners for the same window
@@ -317,22 +316,18 @@ async function initMap() {
                         document.querySelector(`#feedback-sent-${restaurantID}`).style.display = 'inline-block'
                         document.querySelector(`#feedback-text-${restaurantID}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
                         
-                        try {
-                          const response = await apiServices.post('/api/feedback/', body, csrfToken)
-                          const data = await response.json()
-                          console.log({data})
-                          const addedComment = usersFeedback(body.comment, rating)
-                          document.querySelector(`#comment-HTML-${restaurantID}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                          document.querySelector(`#noratings-${restaurantID}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
-                          document.querySelector(`#no-comments-HTML-${restaurantID}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
-                        } catch (error) {
-                          console.error(error)
-                        }    
+                        const [response, data] = await apiServices.post('/api/feedback/', body, csrfToken)
+                        console.log(data)
+                        const addedComment = usersFeedback(body.comment, rating)
+                        document.querySelector(`#comment-HTML-${restaurantID}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                        document.querySelector(`#noratings-${restaurantID}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
+                        document.querySelector(`#no-comments-HTML-${restaurantID}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:   
                     }
                     })
                   },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
                 }
-                // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
+                // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the just-now-opened openInfoWindow.
+
                 openInfoWindow = infowindow
               }
             })
