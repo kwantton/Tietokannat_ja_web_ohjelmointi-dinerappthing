@@ -151,7 +151,7 @@
                     nameElement.textContent = restaurantJSON.restaurant_name
                     averageElement.textContent = restaurantJSON.nRatings === 0 
                         ? '0 ratings'
-                        : `average ${restaurantJSON.average} (${restaurantJSON.nRatings} rating${restaurantJSON.nRatings === 1 ? '' : 's'})`
+                        : `average ${Math.round(restaurantJSON.average*100)/100} (${restaurantJSON.nRatings} rating${restaurantJSON.nRatings === 1 ? '' : 's'})`
                     addressElement.textContent = restaurantJSON.address
 
                     restaurantDivElement.appendChild(nameElement)
