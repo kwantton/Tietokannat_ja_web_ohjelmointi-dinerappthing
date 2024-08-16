@@ -1,8 +1,8 @@
 // Initialize and add the map
-import apiServices from "./apiServices.js"; // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
-import starRating from "./starRating.js";
-import usersFeedback from "./usersFeedback.js";
-import safeHTML from "./safeHTML.js";
+import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
+import starRating from "./starRating.js"
+import usersFeedback from "./usersFeedback.js"
+import safeHTML from "./safeHTML.js"
 
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
@@ -13,22 +13,22 @@ console.log(`user: "${user}"`)
 
 let data2 = await apiServices.getAll('/api/sessioncsrf')
 const csrfToken = data2.csrf_token
-// console.log(`csrfToken: "${csrfToken}"`) // let's not show this to actual users
+// console.log(`csrfToken: "${csrfToken}"`)   // let's not show this to actual users
 
 let data3 = await apiServices.getAll('/api/map-token')
 const mapToken = data3.map_token
-// console.log(`mapToken: "${mapToken}"`) // let's not show this either
+// console.log(`mapToken: "${mapToken}"`)     // let's not show this either c:
 
-let map;
+let map
 async function initMap() {
 
   // Kumpula general location; for centering the map around
-  const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
+  const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 }
   
   // Request needed Google libraries. These are from the google Cloud instruction pages
   //@ts-ignore
-  const { Map } = await google.maps.importLibrary("maps");
-  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+  const { Map } = await google.maps.importLibrary("maps")
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker")
   const { PlacesService } = await google.maps.importLibrary('places')     // this is for getting exact locations, since based on only address (and google Geocoder API), many diners would get placed into the wrong end of a larger building, AND they would be placed on top of each other
 
   // The map itself, centered at Kumpula region. The restaurants from SQL db are set below
@@ -36,7 +36,7 @@ async function initMap() {
     zoom: 15,
     center: kumpula_pos,
     mapId: "DEMO_MAP_ID",
-  });
+  })
 
   const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
   const service = new PlacesService(map)
@@ -51,12 +51,12 @@ async function initMap() {
       fields: ['name', 'geometry', 'formatted_address', 'place_id', 'icon', 'icon_background_color']        // NB! place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes the problem that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map. ref: (https://developers.google.com/maps/documentation/places/web-service/details)
     } // 'icon' is for getting image url (for getting png picture)
 
-    const restaurant_id_from_db = location.id
+    const restaurantID = location.id
 
     // QUERY to the Places API
     service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) { // if status is OK AND results exist (i.e., not null or undefined or whatever, which also would be interpreted as FALSE)
-        const place = results[0];
+        const place = results[0]
 
         const detailRequest = {
           placeId: place.place_id,
@@ -75,17 +75,17 @@ async function initMap() {
             markerContainer.id = 'marker-container'                   // for the search box above the map; these markers are what I want to show / hide based on the search query
 
             // creating the markerElement and making it pretty (more in 'style.css')
-            const markerElement = document.createElement('div');            
-            markerElement.className = 'custom-marker';
-            markerElement.style.backgroundColor = '#FCD12A';
-            markerElement.style.backgroundImage = `url(${place.icon})`;
-            markerElement.style.backgroundSize = 'contain';
-            markerElement.style.width = '26px';
-            markerElement.style.height = '26px';
+            const markerElement = document.createElement('div')            
+            markerElement.className = 'custom-marker'
+            markerElement.style.backgroundColor = '#FCD12A'
+            markerElement.style.backgroundImage = `url(${place.icon})`
+            markerElement.style.backgroundSize = 'contain'
+            markerElement.style.width = '26px'
+            markerElement.style.height = '26px'
             // console.log("place.icon:", place.icon)                 // the URL for the icon png image
 
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
-            const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurant_id_from_db}`)
+            const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurantID}`)
             let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
             const descriptionsLower = sensible_descriptions.map(d => d.toLowerCase()) // copy for testing
             categoriesFromDb.forEach(categoryJSON => {
@@ -96,14 +96,14 @@ async function initMap() {
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
             // text label element for the marker above
-            const labelElement = document.createElement('span');
-            labelElement.textContent = placeDetails.name;             // (1) a label for the marker; otherwise you wouldn't see the name of the place by default. (2) Also, the search-by-name in 'map.jinja' uses this!
+            const labelElement = document.createElement('span')
+            labelElement.textContent = placeDetails.name              // (1) a label for the marker; otherwise you wouldn't see the name of the place by default. (2) Also, the search-by-name in 'map.jinja' uses this!
             labelElement.descriptions = sensible_descriptions         // I'M ADDING THIS CUSTOM ATTRIBUTE HERE for the search function 'map-search-descriptions' in 'map.jinja'. Because I'm already using the above 'labelElement.textContent' for the search that's based on the place name, it's most convenient to do this -> I can use the same logic in the search that's based on descriptions c:
-            labelElement.style.marginTop = '5px';                     // position of the text relative to the marker; let's put it BELOW the marker itself            
-            labelElement.style.backgroundColor = 'white';             // a background color to the label
-            labelElement.style.padding = '2px 5px';                   // some padding to the label
-            labelElement.style.borderRadius = '3px';                  // round the corners of the label
-            labelElement.style.boxShadow = '0 0 3px rgba(0,0,0,0.3)'; 
+            labelElement.style.marginTop = '5px'                      // position of the text relative to the marker; let's put it BELOW the marker itself            
+            labelElement.style.backgroundColor = 'white'              // a background color to the label
+            labelElement.style.padding = '2px 5px'                    // some padding to the label
+            labelElement.style.borderRadius = '3px'                   // round the corners of the label
+            labelElement.style.boxShadow = '0 0 3px rgba(0,0,0,0.3)'
             labelElement.id = 'label-element'
 
             // put the marker and its label in the markerContainer
@@ -116,22 +116,22 @@ async function initMap() {
               position: placeDetails.geometry.location,
               title: placeDetails.name,
               content: markerContainer
-            }); 
+            }) 
             // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements
 
-            const openingHours = placeDetails.opening_hours?.weekday_text || [];  // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
-            const openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join(''); // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
-            const openNow = placeDetails.opening_hours?.isOpen();                 // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work without it!
-            let openNowMsg = '';
+            const openingHours = placeDetails.opening_hours?.weekday_text || []   // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
+            const openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join('') // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
+            const openNow = placeDetails.opening_hours?.isOpen()                  // returns 'true' or 'false' depending on what time it is. NB! The .isOpen() needs the 'utc_offset_minutes' that was set previously, above in the array 'fields'! isOpen() won't work without it!
+            let openNowMsg = ''
             openNow 
               ? openNowMsg = '<p style=position:relative;color:green;>OPEN</p>'   // if openNow, this row, with green text
-              : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>';   // if not openNow, this row, with red text
+              : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>'    // if not openNow, this row, with red text
 
-            // the API for comments and ratings per location-in-question. This is provided by the '/api/ratings/<int:restaurant_id>' in app.py
-            const restaurant_id = location.id // this is the SQL db 'restaurant_id'
+            
+            
             
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
-            const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurant_id}`)
+            const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurantID}`)
 
             // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
             
@@ -145,11 +145,11 @@ async function initMap() {
               : starRatingHTML = ''
             
             let noCommentsYetHTML = ''
-            if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML-${restaurant_id_from_db}'>no comments yet</p>`}
-            let commentHTML = `<ul id="comment-HTML-${restaurant_id_from_db}"></ul>`
+            if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML-${restaurantID}'>no comments yet</p>`}
+            let commentHTML = `<ul id="comment-HTML-${restaurantID}"></ul>`
             if (filtered_ratings_for_restaurant.length !== 0 || filtered_comments_for_restaurant.length !== 0) {
               commentHTML = `
-                  <ul id="comment-HTML-${restaurant_id_from_db}">` + 
+                  <ul id="comment-HTML-${restaurantID}">` + 
                     ratings_for_restaurant.map(item => {
                       if (item.comment_visible || item.rating_visible) {
                           return `<li>
@@ -173,12 +173,12 @@ async function initMap() {
             const feedbackHTML = `
             <div>
               <p>Feedback:</p>
-              <textarea id='feedback-text-${restaurant_id_from_db}' placeholder='feedback c:'></textarea>
+              <textarea id='feedback-text-${restaurantID}' placeholder='feedback c:'></textarea>
               <p>Rate by clicking on the stars:</p>
-              <div class="rating-posting-section-stars" id='rating-posting-section-stars-${restaurant_id_from_db}'>
+              <div class="rating-posting-section-stars" id='rating-posting-section-stars-${restaurantID}'>
                 ${starRating(0) /** this is the star rating (1-5) to be clicked by the user. 'onclick's for each of these 'rating-posting-section-stars' will be set onClick of the infoWindow further below c: */}
               </div>
-              <button id='send-rating-${restaurant_id_from_db}'>Submit</button>
+              <button id='send-rating-${restaurantID}'>Submit</button>
             </div>
             `
             const signInUltimatumHTML = `
@@ -211,7 +211,7 @@ async function initMap() {
                   <p>
                     ${filtered_ratings_for_restaurant.length !== 0
                       ? `${filtered_ratings_for_restaurant.length} rating${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}`
-                      : `<noratings id='noratings-${restaurant_id_from_db}'>no star ratings yet</noratings>`}
+                      : `<noratings id='noratings-${restaurantID}'>no star ratings yet</noratings>`}
                     ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5 <br>` : ''} 
                     ${starRatingHTML}
                   </p>
@@ -219,14 +219,14 @@ async function initMap() {
                   ${commentHTML /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
                   <h2> feedback </h2>
                   ${user !== 'admin'
-                    ? `<div id='feedback-section-${restaurant_id_from_db}' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
+                    ? `<div id='feedback-section-${restaurantID}' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
                     : ` <p> As 'admin', you cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
                         <a href='/logout'>to logout</a>`
                   }
-                  <div id='feedback-sent-${restaurant_id_from_db}' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
+                  <div id='feedback-sent-${restaurantID}' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
                 </div>
             </div>
-            `;
+            `
             // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
             // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
 
@@ -234,7 +234,7 @@ async function initMap() {
             // LET'S DO THIS ONLY IF ADMIN IS LOGGED IN. This conserves db traffic and prevents unnecessary update-need-checks in app.py
             if (user === 'admin') {
               const body = {
-                'restaurant_id': restaurant_id_from_db,
+                'restaurant_id': restaurantID,
                 'restaurant_name': placeDetails.name,
                 'address': place.formatted_address,
                 'descriptions':sensible_descriptions
@@ -242,26 +242,26 @@ async function initMap() {
               
               try {
                 const response = await apiServices.post('/api/update-name-address-categories', body, mapToken)
-                const data = await response.json();
+                const data = await response.json()
             
                 if (response.ok) {
                   let updatedOrNot
                   data.updated === ''
                     ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
                     :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
-                  console.log(updatedOrNot, data);
+                  console.log(updatedOrNot, data)
                 } else {
-                  console.error('Update failed:', data);
+                  console.error('Update failed:', data)
                 }
               } catch (error) {
-                console.error('Error:', error);
+                console.error('Error:', error)
               }
             }
 
             const infowindow = new google.maps.InfoWindow({
               content: infoWindowContent,
               ariaLabel: location.name,
-            });
+            })
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
             diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
@@ -270,42 +270,42 @@ async function initMap() {
               infowindow.open({
                 anchor: diner_marker,
                 map,
-              });
+              })
 
               if(!eventListenedInfoWindows.includes(infowindow)) { // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
                 eventListenedInfoWindows.push(infowindow) // let's not add a million eventlisteners for the same window
-                let rating = null;
+                let rating = null
   
                 if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
                   setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                   
-                    document.querySelectorAll(`#rating-posting-section-stars-${restaurant_id_from_db} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
+                    document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
                       star.addEventListener('click', (event) => {
-                        rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
+                        rating = event.currentTarget.dataset.value // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
                         // event.currentTarget.classList.toggle('checked')
                         
                         // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
-                        document.querySelectorAll(`#rating-posting-section-stars-${restaurant_id_from_db} .fa-star`).forEach(star => {
+                        document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => {
                           if (star.dataset.value <= rating) {
                             star.classList.add('checked')     // e.g. if we're looking at star#2 ('<=', i.e. less or equal value) and the rating was 3, then ensure that star#2 is checked if it wasn't already (=yellow, not empty). This has to be checked as we don't know how many times the user is gonna change their mind or reclick before submitting the review!'.classList.add' is ok even if the class 'checked' is already present in the classList; 
                           } else {
                             star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
                           }
                         })
-                        console.log(`User rated: ${rating} stars`);
-                      });
-                    });
+                        console.log(`User rated: ${rating} stars`)
+                      })
+                    })
   
                     // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
-                    document.querySelector(`#send-rating-${restaurant_id_from_db}`).addEventListener('click', async event => {
+                    document.querySelector(`#send-rating-${restaurantID}`).addEventListener('click', async event => {
                       event.preventDefault() // we don't want to reload the whole page after sending the feedback
-                      const comment = document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value;
+                      const comment = document.querySelector(`#feedback-text-${restaurantID}`).value
                       if (comment === '' || rating === null) {
                         alert("please provide feedback text and a rating before submitting")
                       } else {
                         const restaurant_name = location.name
                         const body = {
-                          restaurant_id,
+                          restaurant_id: restaurantID,
                           restaurant_name,
                           comment}
                         if(rating) {
@@ -313,18 +313,18 @@ async function initMap() {
                         } else {
                           //pass
                         }
-                        document.querySelector(`#feedback-section-${restaurant_id_from_db}`).style.display = 'none'
-                        document.querySelector(`#feedback-sent-${restaurant_id_from_db}`).style.display = 'inline-block'
-                        document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
+                        document.querySelector(`#feedback-section-${restaurantID}`).style.display = 'none'
+                        document.querySelector(`#feedback-sent-${restaurantID}`).style.display = 'inline-block'
+                        document.querySelector(`#feedback-text-${restaurantID}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
                         
                         try {
                           const response = await apiServices.post('/api/feedback/', body, csrfToken)
                           const data = await response.json()
                           console.log({data})
                           const addedComment = usersFeedback(body.comment, rating)
-                          document.querySelector(`#comment-HTML-${restaurant_id_from_db}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                          document.querySelector(`#noratings-${restaurant_id_from_db}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
-                          document.querySelector(`#no-comments-HTML-${restaurant_id_from_db}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
+                          document.querySelector(`#comment-HTML-${restaurantID}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                          document.querySelector(`#noratings-${restaurantID}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
+                          document.querySelector(`#no-comments-HTML-${restaurantID}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
                         } catch (error) {
                           console.error(error)
                         }    
@@ -335,17 +335,16 @@ async function initMap() {
                 // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
                 openInfoWindow = infowindow
               }
-              
-            });
+            })
           } else {        // if getDetails doesn't succeed
-            console.error("getDetails was not successful for the following reason: " + detailStatus);
-          };
-        });
+            console.error("getDetails was not successful for the following reason: " + detailStatus)
+          }
+        })
       } else {            // if findPlaceFromQuery doesn't succeed
-        console.error("findPlaceFromQuery was not successful for the following reason: " + status); // this is printed in browser
+        console.error("findPlaceFromQuery was not successful for the following reason: " + status) // this is printed in browser
       }
-    });
-  }; // 'for const location of json_of_locations' ends here!
-};
+    })
+  }                       // 'for const location of json_of_locations' ends here!
+}
 
-initMap();
+initMap()
