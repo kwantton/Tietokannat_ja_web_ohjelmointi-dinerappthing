@@ -43,6 +43,7 @@ async function initMap() {
 
   // a placeholder. Why: (1) for each marker on the map, an infoWindow is created. (2) then an event listener "onClick" for each is created. Upon clicking and infowindow open, I first infowindow.close() the open one. If I didn't do this, the document.querySelectors that are supposed to be targeting the NEW opened infoWindow would be targeting the FIRST one instead, if they are located higher in the HTML 'document' object - this depends on the order in which the markers were originally created. Why let, not const? Because this changes every time a new infowindow is opened
   let openInfoWindow
+  let eventListenedInfoWindows = []
   
   for (const location of json_of_locations) {       // for each location (=restaurant!) in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
     const request = {
@@ -144,11 +145,11 @@ async function initMap() {
               : starRatingHTML = ''
             
             let noCommentsYetHTML = ''
-            if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML'>no comments yet</p>`}
-            let commentHTML = '<ul id="comment-HTML"></ul>'
+            if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML-${restaurant_id_from_db}'>no comments yet</p>`}
+            let commentHTML = `<ul id="comment-HTML-${restaurant_id_from_db}"></ul>`
             if (filtered_ratings_for_restaurant.length !== 0 || filtered_comments_for_restaurant.length !== 0) {
               commentHTML = `
-                  <ul id="comment-HTML">` + 
+                  <ul id="comment-HTML-${restaurant_id_from_db}">` + 
                     ratings_for_restaurant.map(item => {
                       if (item.comment_visible || item.rating_visible) {
                           return `<li>
@@ -174,7 +175,7 @@ async function initMap() {
               <p>Feedback:</p>
               <textarea id='feedback-text-${restaurant_id_from_db}' placeholder='feedback c:'></textarea>
               <p>Rate by clicking on the stars:</p>
-              <div class="rating-posting-section-stars">
+              <div class="rating-posting-section-stars" id='rating-posting-section-stars-${restaurant_id_from_db}'>
                 ${starRating(0) /** this is the star rating (1-5) to be clicked by the user. 'onclick's for each of these 'rating-posting-section-stars' will be set onClick of the infoWindow further below c: */}
               </div>
               <button id='send-rating-${restaurant_id_from_db}'>Submit</button>
@@ -210,7 +211,7 @@ async function initMap() {
                   <p>
                     ${filtered_ratings_for_restaurant.length !== 0
                       ? `${filtered_ratings_for_restaurant.length} rating${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}`
-                      : `<noratings>no star ratings yet</noratings>`}
+                      : `<noratings id='noratings-${restaurant_id_from_db}'>no star ratings yet</noratings>`}
                     ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5 <br>` : ''} 
                     ${starRatingHTML}
                   </p>
@@ -218,11 +219,11 @@ async function initMap() {
                   ${commentHTML /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
                   <h2> feedback </h2>
                   ${user !== 'admin'
-                    ? `<div id='feedback-section' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
+                    ? `<div id='feedback-section-${restaurant_id_from_db}' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
                     : ` <p> As 'admin', you cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
                         <a href='/logout'>to logout</a>`
                   }
-                  <div id='feedback-sent' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
+                  <div id='feedback-sent-${restaurant_id_from_db}' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
                 </div>
             </div>
             `;
@@ -266,72 +267,75 @@ async function initMap() {
             diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
               // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME, THEN UN-COMMENT THE BELOW LINE. This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
               // openInfoWindow?.close() // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
-
               infowindow.open({
                 anchor: diner_marker,
                 map,
               });
 
-              let rating = null;
-
-              if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
-                setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
-                
-                  document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
-                    star.addEventListener('click', (event) => {
-                      rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
-                      // event.currentTarget.classList.toggle('checked')
-                      
-                      // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
-                      document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => {
-                        if (star.dataset.value <= rating) {
-                          star.classList.add('checked')     // e.g. if we're looking at star#2 ('<=', i.e. less or equal value) and the rating was 3, then ensure that star#2 is checked if it wasn't already (=yellow, not empty). This has to be checked as we don't know how many times the user is gonna change their mind or reclick before submitting the review!'.classList.add' is ok even if the class 'checked' is already present in the classList; 
-                        } else {
-                          star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
-                        }
-                      })
-                      console.log(`User rated: ${rating} stars`);
+              if(!eventListenedInfoWindows.includes(infowindow)) { // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
+                eventListenedInfoWindows.push(infowindow) // let's not add a million eventlisteners for the same window
+                let rating = null;
+  
+                if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
+                  setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
+                  
+                    document.querySelectorAll(`#rating-posting-section-stars-${restaurant_id_from_db} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
+                      star.addEventListener('click', (event) => {
+                        rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
+                        // event.currentTarget.classList.toggle('checked')
+                        
+                        // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
+                        document.querySelectorAll(`#rating-posting-section-stars-${restaurant_id_from_db} .fa-star`).forEach(star => {
+                          if (star.dataset.value <= rating) {
+                            star.classList.add('checked')     // e.g. if we're looking at star#2 ('<=', i.e. less or equal value) and the rating was 3, then ensure that star#2 is checked if it wasn't already (=yellow, not empty). This has to be checked as we don't know how many times the user is gonna change their mind or reclick before submitting the review!'.classList.add' is ok even if the class 'checked' is already present in the classList; 
+                          } else {
+                            star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
+                          }
+                        })
+                        console.log(`User rated: ${rating} stars`);
+                      });
                     });
-                  });
-
-                  // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
-                  document.querySelector(`#send-rating-${restaurant_id_from_db}`).addEventListener('click', async event => {
-                    event.preventDefault() // we don't want to reload the whole page after sending the feedback
-                    const comment = document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value;
-                    if (comment === '' || rating === null) {
-                      alert("please provide feedback text and a rating before submitting")
-                    } else {
-                      const restaurant_name = location.name
-                      const body = {
-                        restaurant_id,
-                        restaurant_name,
-                        comment}
-                      if(rating) {
-                        body.rating = rating  // if a rating exists (is not null), then include that in the body
+  
+                    // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
+                    document.querySelector(`#send-rating-${restaurant_id_from_db}`).addEventListener('click', async event => {
+                      event.preventDefault() // we don't want to reload the whole page after sending the feedback
+                      const comment = document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value;
+                      if (comment === '' || rating === null) {
+                        alert("please provide feedback text and a rating before submitting")
                       } else {
-                        //pass
-                      }
-                      document.querySelector('#feedback-section').style.display = 'none'
-                      document.querySelector('#feedback-sent').style.display = 'inline-block'
-                      document.querySelector('#feedback-text').value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
-                      
-                      try {
-                        const response = await apiServices.post('/api/feedback/', body, csrfToken)
-                        const data = await response.json()
-                        console.log({data})
-                        const addedComment = usersFeedback(body.comment, rating)
-                        document.querySelector('#comment-HTML').appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                        document.querySelector('noratings')?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
-                        document.querySelector('#no-comments-HTML')?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
-                      } catch (error) {
-                        console.error(error)
-                      }    
-                  }
-                  })
-                },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
+                        const restaurant_name = location.name
+                        const body = {
+                          restaurant_id,
+                          restaurant_name,
+                          comment}
+                        if(rating) {
+                          body.rating = rating  // if a rating exists (is not null), then include that in the body
+                        } else {
+                          //pass
+                        }
+                        document.querySelector(`#feedback-section-${restaurant_id_from_db}`).style.display = 'none'
+                        document.querySelector(`#feedback-sent-${restaurant_id_from_db}`).style.display = 'inline-block'
+                        document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
+                        
+                        try {
+                          const response = await apiServices.post('/api/feedback/', body, csrfToken)
+                          const data = await response.json()
+                          console.log({data})
+                          const addedComment = usersFeedback(body.comment, rating)
+                          document.querySelector(`#comment-HTML-${restaurant_id_from_db}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
+                          document.querySelector(`#noratings-${restaurant_id_from_db}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
+                          document.querySelector(`#no-comments-HTML-${restaurant_id_from_db}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:
+                        } catch (error) {
+                          console.error(error)
+                        }    
+                    }
+                    })
+                  },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
+                }
+                // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
+                openInfoWindow = infowindow
               }
-              // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
-              openInfoWindow = infowindow
+              
             });
           } else {        // if getDetails doesn't succeed
             console.error("getDetails was not successful for the following reason: " + detailStatus);
