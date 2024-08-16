@@ -1,10 +1,10 @@
 from app import app, where, getenv
 from flask import render_template, jsonify, redirect, request, session
+from helpers import table_name_check, select_all
 from db import db, text, secrets, check_password_hash, generate_password_hash
 
 if where == 'local':
-    # 'app.config' is for global variables. I tried session['WHERE'] = 'local', but that doesn't work here!; you can only set session['x'] from an app.route(...): "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it only exists when a request is being processed. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing." -ChatGPT
-    app.config['WHERE'] = 'local' 
+    app.config['WHERE'] = 'local' # 'app.config' is for global variables. I tried session['WHERE'] = 'local', but that doesn't work here!; you can only set session['x'] from an 'app.route(...)': "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it ONLY EXISTS WHEN A REQUEST IS BEING PROCESSED. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing." -ChatGPT
 elif where == 'fly.io':
     app.config['WHERE'] = 'fly.io'
 
@@ -14,28 +14,6 @@ API_key = getenv('GOOGLE_API_KEY')
 
 # below, SECURITY CHECK: prevention of SQL injection (NB! ':table' can not be done! Hence I have to manually make sure no-one's trying an SQL injection. See below...)
 # Why not :table? Because it's not allowed to use a variable for the table name! Tried that: 'In SQL, using placeholders for table names or column names in parameterized queries doesn't work because placeholders can only be used for values, not for SQL identifiers (like table names or column names). This is why your table name is being surrounded by quotes and treated as a string literal, not as a table name.' (ChatGPT). So yeah, I had that problem
-def table_name_check(table):
-    allowed_tables = {'restaurants','restaurant_categories','ratings','comments', 'users'}
-    if table not in allowed_tables:
-        raise ValueError("Invalid table name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list of table_name_check first!")
-    
-def visible_column_name_check(column_name):
-    allowed_names = {'visible','restaurant_visible','rating_visible','category_visible'}
-    if column_name not in allowed_names:
-        raise ValueError("Invalid column name; if you're trying to toggle visibility of something new in SQL db, please include that in the safe list of visible_column_name_check first!")
-
-def select_all(table, visible_column=None):
-    # ':table' or ':visible' can not be done in text(...), hence I'm using the check function 'table_name_check' to check if a valid table is being accessed. If not, it raises ValueError
-    table_name_check(table)
-    if visible_column:
-        visible_column_name_check(visible_column)
-        # in table 'comments', the column name is just 'visible', in others, it's 'restaurant_visible', etc. - hence the name is given as a parameter to select_all
-        sql = text(f'SELECT * FROM {table} WHERE {visible_column}') 
-    if not visible_column:
-        sql = text(f'SELECT * FROM {table}')
-    result = db.session.execute(sql, {'visible_column':visible_column})
-    rows = result.fetchall()
-    return rows
 
 @app.route('/')
 def index():
