@@ -1,6 +1,7 @@
 /* 
  * Always set the map height explicitly to define the size of the div element
  * that contains the map. 
+ * ^^ the above comment is from google maps guides c:
  */
  
  h1 {
@@ -89,6 +90,7 @@ button {
     padding: 0;
   }
   
+  /* I'm not using an iframe - a simple map view (copy-paste without any custom markers) can be done with the iframe, I tried that initially.*/
   /* .h_iframe iframe {
     position:absolute;
     top:0;
@@ -106,6 +108,7 @@ button {
   box-shadow: 0 0 5px rgba(0,0,0,0.5);
 }
 
+/*for the star ratings; a toggled star is orange*/
 .checked {
   color: orange;
 }

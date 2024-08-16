@@ -2,12 +2,13 @@
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='style.css') }}" /> <!-- url_for is needed for getting the url that Flask is handling-->
-        {% block more_css %}  {% endblock  %} <!-- Why this exists: it's best to put all style css -->
+        {% block more_css %}  {% endblock  %} <!-- Why this exists: it's best to put all style css in the <head>. I need this in the map.jinja page. -->
         <title> dinerapp - {% block title %} {% endblock %}</title>
         {% if session.where != 'local'%}
             <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> <!-- to get https:// always, when deploying online! -->
         {% else %}
         {% endif %}
+        <meta name="viewport" content="width=500, initial-scale=1"> <!-- I have something overriding this, since no matter what I choose here, it doesn't affect the end result! -->
     </head>
     <body>
         <h1> DinerApp </h1>
