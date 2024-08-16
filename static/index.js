@@ -172,12 +172,12 @@ async function initMap() {
             const feedbackHTML = `
             <div>
               <p>Feedback:</p>
-              <textarea id='feedback-text' placeholder='feedback c:'></textarea>
+              <textarea id='feedback-text-${restaurant_id_from_db}' placeholder='feedback c:'></textarea>
               <p>Rate by clicking on the stars:</p>
               <div class="rating-posting-section-stars">
                 ${starRating(0) /** this is the star rating (1-5) to be clicked by the user. 'onclick's for each of these 'rating-posting-section-stars' will be set onClick of the infoWindow further below c: */}
               </div>
-              <button id='send-rating'>Submit</button>
+              <button id='send-rating-${restaurant_id_from_db}'>Submit</button>
             </div>
             `
             const signInUltimatumHTML = `
@@ -263,8 +263,9 @@ async function initMap() {
             });
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
-            diner_marker.addListener('click', () => {
-              openInfoWindow?.close() // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
+            diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
+              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME, THEN UN-COMMENT THE BELOW LINE. This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
+              // openInfoWindow?.close() // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
 
               infowindow.open({
                 anchor: diner_marker,
@@ -278,7 +279,7 @@ async function initMap() {
                 
                   document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
                     star.addEventListener('click', (event) => {
-                      rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file
+                      rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
                       // event.currentTarget.classList.toggle('checked')
                       
                       // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
@@ -289,15 +290,14 @@ async function initMap() {
                           star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
                         }
                       })
-
                       console.log(`User rated: ${rating} stars`);
                     });
                   });
 
                   // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
-                  document.querySelector('#send-rating').addEventListener('click', async event => {
+                  document.querySelector(`#send-rating-${restaurant_id_from_db}`).addEventListener('click', async event => {
                     event.preventDefault() // we don't want to reload the whole page after sending the feedback
-                    const comment = document.querySelector('#feedback-text').value;
+                    const comment = document.querySelector(`#feedback-text-${restaurant_id_from_db}`).value;
                     if (comment === '' || rating === null) {
                       alert("please provide feedback text and a rating before submitting")
                     } else {
@@ -328,7 +328,7 @@ async function initMap() {
                       }    
                   }
                   })
-                },0) // yes, the ' 0 ms ' timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
+                },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
               }
               // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
               openInfoWindow = infowindow
