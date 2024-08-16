@@ -16,15 +16,18 @@ that only happens when using adblocker.
 A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
 on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.
+Upon clicking each marker, you can see whether the place is currently open or closed, what its opening hours are, what categories (café, restaurant, bar etc) of services it has, the current sql-db-based ratings and comments (those that have 'visible'=TRUE in the db), and the user can leave their own rating and comment. If the user is not logged in, they will see a text with a link to login.
 The admin can add new places on the map by querying based on a rough name and a rough address, hide existing places, as well as add and remove descriptions ("categories") of the places. The admin can delete reviews by rendering them invisible to others (we don't want to permanently delete the evidence c;). The admin can also delete comments by rendering them invisible. Deleting comments and reviews (non-permanently) can be done independently of each other. Hidden (non-permanently 'removed') ratings are ignored in calculation of grade average for a place.
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
-
+- since I used documentQuerySelector when handling the infoboxes, and since it's possible for multiple boxes to be open, the selectors break if the user tries to give a rating while multiple boxes are open
 - refactor and clean-up
 
 ## Done
+- [x] markers on the map; icon based on if it's a restaurant, bar, cafe, etc., and there's a text below each icon by default (this is also ctrl-f:ble!)
 - [x] add info, opening hours and sql-database-based ratings /5 to each custom location on the map
+- [x] is the place open right now? Visible in the info window after clicking.
 - [x] possible for users to add comments and ratings
 - [x] admin can delete comments and ratings given by users (when they are clearly spam etc.)
 - [x] restaurant search (textbox search based on name OR place categories and description)
@@ -74,7 +77,9 @@ See schema.sql
     - when you enable 
         - Maps JavaScript API in your Google Cloud settings, 
         - Places API also in your Google Cloud settings,
-you should be able to use the code as-is. As I understand, it's free and would warn you if you are near your free limit, and even then you would have to manually agree to pay if you exceed your usage limit. Let's hope I didn't misunderstand anything :p
+you should be able to use the code as-is. 
+As of 16.8.2024:
+"You are not billed during your Free Trial \[that's 90 days\]. When the Free Trial ends, all resources you created during the trial are stopped and you will not be charged, unless you upgrade to a paid Cloud Billing account." The free trial seems to be 281 € / month, for the duration of 90 days (3 months), after which you'd have to pay for the following usage.
 
 ### (2) Google Maps API
 First, see the GOOGLE_API_KEY above.

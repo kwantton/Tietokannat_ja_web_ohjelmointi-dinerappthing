@@ -6,20 +6,21 @@ import safeHTML from "./safeHTML.js";
 
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
-let data1 = await apiServices.getAll('/api/sessionuser') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+// session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
+let data1 = await apiServices.getAll('/api/sessionuser') 
 const user = data1.session_user
 console.log(`user: "${user}"`)
 
-let data2 = await apiServices.getAll('/api/sessioncsrf') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+let data2 = await apiServices.getAll('/api/sessioncsrf')
 const csrfToken = data2.csrf_token
 // console.log(`csrfToken: "${csrfToken}"`) // let's not show this to actual users
 
-let data3 = await apiServices.getAll('/api/map-token') // session['user'] is only set as non-'' when a user is logged in. I had set it as '' in other cases in app.py for route /api/sessionuser.
+let data3 = await apiServices.getAll('/api/map-token')
 const mapToken = data3.map_token
 // console.log(`mapToken: "${mapToken}"`) // let's not show this either
 
 let map;
-async function initMap(apiServices, starRating) {
+async function initMap() {
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 };
@@ -40,8 +41,9 @@ async function initMap(apiServices, starRating) {
   const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
   const service = new PlacesService(map)
 
-  // const geocoder = new Geocoder();               // this is not what I wanna use anymore, since based on address-based location alone this results in too rough lng and lat for the diners, and stacks different diners on top of each other (=in the same lng and lat) if multiple are located within the same building! Not great c:
-
+  // a placeholder. Why: (1) for each marker on the map, an infoWindow is created. (2) then an event listener "onClick" for each is created. Upon clicking and infowindow open, I first infowindow.close() the open one. If I didn't do this, the document.querySelectors that are supposed to be targeting the NEW opened infoWindow would be targeting the FIRST one instead, if they are located higher in the HTML 'document' object - this depends on the order in which the markers were originally created. Why let, not const? Because this changes every time a new infowindow is opened
+  let openInfoWindow
+  
   for (const location of json_of_locations) {       // for each location (=restaurant!) in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
     const request = {
       query: `${location.name} ${location.address}`,  // Template strings of JS e.g., `${js_variable_name} some text`. I'm querying based on both the name and the location (from SQL db), of course. It's the only sensible minimum requirement to get the exact location of the exact diner that I'm 'looking for' based on the search. This ` ${name} ${address}` just means; name + " " + address, in case you're not familiar with JS. It's called 'template strings' in JS.
@@ -262,6 +264,8 @@ async function initMap(apiServices, starRating) {
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
             diner_marker.addListener('click', () => {
+              openInfoWindow?.close() // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
+
               infowindow.open({
                 anchor: diner_marker,
                 map,
@@ -272,7 +276,7 @@ async function initMap(apiServices, starRating) {
               if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
                 setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                 
-                  document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars)
+                  document.querySelectorAll('.rating-posting-section-stars .fa-star').forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
                     star.addEventListener('click', (event) => {
                       rating = event.currentTarget.dataset.value; // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file
                       // event.currentTarget.classList.toggle('checked')
@@ -326,6 +330,8 @@ async function initMap(apiServices, starRating) {
                   })
                 },0) // yes, the ' 0 ms ' timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
               }
+              // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the openInfoWindow.
+              openInfoWindow = infowindow
             });
           } else {        // if getDetails doesn't succeed
             console.error("getDetails was not successful for the following reason: " + detailStatus);
@@ -338,4 +344,4 @@ async function initMap(apiServices, starRating) {
   }; // 'for const location of json_of_locations' ends here!
 };
 
-initMap(apiServices, starRating);
+initMap();
