@@ -53,4 +53,4 @@ const commentHTML = (restaurantID, filtered_ratings_for_restaurant, filtered_com
     return html
 }
 
-export default { feedbackHTML, signInUltimatumHTML, feedbackSentHTML, commentHTML }
+export default { feedbackHTML, signInUltimatumHTML, feedbackSentHTML, commentHTML } // 'infoWindowContent' is not here: it is its own .js, 'createInfoWindowsContent.js', since it's huge, and the template for all the rest!

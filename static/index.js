@@ -1,38 +1,33 @@
-
 import safeHTML from "./safeHTML.js"
 import starRating from "./starRating.js"
 import createHTML from "./createHTML.js"
 import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
 import updateRestaurantInfo from "./updateRestaurantInfo.js"
 import createMarkerContainer from "./createMarkerContainer.js"
+import createInfoWindowContent from "./createInfoWindowContent.js"
 import createStarRatingListener from "./createStarRatingListener.js"
 import createFeedbackSendingListener from "./createFeedbackSendingListener.js"
 
-// ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
-
-// seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
-// session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
+// session['user'] is set as non-'' only if a user is logged in. It is '' if no-one is logged in, in '../api/indexjs.py' for route '/api/sessionuser'.
 let tempData = await apiServices.getAll('/api/sessionuser') 
 const user = tempData.session_user
-console.log(`user: "${user}"`)
 
 // csrf token
 tempData = await apiServices.getAll('/api/sessioncsrf')
 const csrfToken = tempData.csrf_token
-// console.log(`csrfToken: "${csrfToken}"`)   // let's not show this to actual users
 
 // map csrf_token; I'm making sure the map page requests originate from the very same page and nowhere else.
 tempData = await apiServices.getAll('/api/map-token')
 const mapToken = tempData.map_token
-// console.log(`mapToken: "${mapToken}"`)     // let's not show this either c:
 
 let map
 async function initMap() {
+  // since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 
   // Kumpula general location; for centering the map around
   const kumpula_pos = { lat:60.20929799893519, lng:24.94988675516233 }
   
-  // Request needed Google libraries. These are from the google Cloud instruction pages
+  // requests for the needed Google libraries. These are from the google Cloud instruction pages
   //@ts-ignore
   const { Map } = await google.maps.importLibrary('maps')
   const { AdvancedMarkerElement } = await google.maps.importLibrary('marker')
@@ -59,7 +54,7 @@ async function initMap() {
 
     const restaurantID = location.id
 
-    // QUERY to the Places API
+    // QUERY to the Places API. "For example, name or address of a place" - I'm using both, see 'request' above.                                                Source: (https://developers.google.com/maps/documentation/javascript/reference/places-service)
     service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) { // if status is OK AND results exist (i.e., not null or undefined or whatever, which also would be interpreted as FALSE)
         const place = results[0]
@@ -126,44 +121,12 @@ async function initMap() {
             let noCommentsYetHTML = ''
             if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML-${restaurantID}'>no comments yet</p>`}
 
-            // THIS BELOW IS THE ACTUAL CONTENT OF EACH RESTAURANT'S INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
-            // NB! There's not much user-originated HTML left to sanitize below, HOWEVER - placeDetails.name could be whatever. What if the name of the place has ' or < in it, for example? As for the others, 'placeDetails.x' are all derived from Google API, and commentHTML was checked already c:
-              const infoWindowContent =
-            ` 
-            <div id="info-window-content-${restaurantID}"> 
-                <h1 class="firstHeading">${safeHTML(placeDetails.name)}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
-                ${starRatingHTML}
-                <div id="bodyContent">
-                  <p><b>${safeHTML(place.formatted_address)}</b></p>
-                  <div>${openNowMsg}</div>
-                  <ul>${openingHoursHTML}</ul>
-                  <h2>¿🍔/🍹/☕? </h2>
-                  <ul id='descriptions-html'>${descriptionsHTML}</ul>
-                  <h2>comments</h2>
-                  <p>
-                    ${filtered_ratings_for_restaurant.length !== 0
-                      ? `${filtered_ratings_for_restaurant.length} rating${filtered_ratings_for_restaurant.length === 1 ? '' : 's'}`
-                      : `<noratings id='noratings-${restaurantID}'>no star ratings yet</noratings>`}
-                    ${filtered_ratings_for_restaurant.length !== 0 ? `<br>average: ${Math.round(rating_average*100)/100}/5 <br>` : ''} 
-                    ${starRatingHTML}
-                  </p>
-                  ${noCommentsYetHTML}
-                  ${commentHTML /** HTML-sanitized previously with safeHTML() regarding user-derived comments, so no XSS-risk or risk of site breaking exists anymore c: */}
-                  <h2> feedback </h2>
-                  ${user !== 'admin'
-                    ? `<div id='feedback-section-${restaurantID}' style=display:inline-block>${user !== '' ? feedbackHTML : signInUltimatumHTML   /** if the user is signed in, and NOT 'admin', show the feedbackHTML, otherwise sell the idea of signing in to them like your life depends on it. This is known as great customer service or something?*/}</div>`                  
-                    : ` <p> As 'admin', you cannot provide feedback; 'admin' is not in the table 'users', so... please try again as another user! </p>   <!-- if 'admin' is logged in, don't make it possible to send feedback -->
-                        <a href='/logout'>to logout</a>`
-                  }
-                  <div id='feedback-sent-${restaurantID}' style=display:none;color:green>${feedbackSentHTML /** display:inline-block after feedback has been sent successfully c: */}</div>  
-                </div>
-            </div>
-            `
-            // btw, you have to use the `-marks here! (called 'template string') It's only possible to use the ${variable} thing when using this in JavaScript c:
-            // I have a lot of unnecessary divs as for now at leeast; they came originally from the assenine google manual template. Maybe I'll actually use the divs for making this look prettier, maybe not, we'll see. I'm not a fan of eternal CSS suffering.
+            // THE ACTUAL CONTENT OF EACH RESTAURANT'S INFOWINDOW. See '..static/createInfoWindowContent.js'
+            const infoWindowContent = createInfoWindowContent(place, restaurantID, placeDetails, starRatingHTML, openNowMsg, 
+              openingHoursHTML, descriptionsHTML, rating_average, filtered_ratings_for_restaurant, noCommentsYetHTML, commentHTML, 
+              user, feedbackHTML, signInUltimatumHTML, feedbackSentHTML)
 
-            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
-            // LET'S DO THIS ONLY IF ADMIN IS LOGGED IN. This conserves db traffic and prevents unnecessary update-need-checks in app.py
+            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories. Only if admin is logged in.
             if (user === 'admin') {
               await updateRestaurantInfo(restaurantID, placeDetails, place, sensibleDescriptions, mapToken) // uses 'apiServices.post', hence 'await' is needed here 
             }

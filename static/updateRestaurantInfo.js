@@ -1,6 +1,6 @@
 import apiServices from "./apiServices.js"
 
-export default async function(restaurantID, placeDetails, place, sensibleDescriptions, mapToken){
+export default async function (restaurantID, placeDetails, place, sensibleDescriptions, mapToken) {
     const body = {
         'restaurant_id': restaurantID,
         'restaurant_name': placeDetails.name,
