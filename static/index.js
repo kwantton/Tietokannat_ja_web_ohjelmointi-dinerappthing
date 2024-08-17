@@ -4,6 +4,7 @@ import starRating from "./starRating.js"
 import createHTML from "./createHTML.js"
 import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
 import createMarkerContainer from "./createMarkerContainer.js"
+import createStarRatingListener from "./createStarRatingListener.js"
 import createFeedbackSendingListener from "./createFeedbackSendingListener.js"
 
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
@@ -190,45 +191,25 @@ async function initMap() {
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
             diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
-              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME, THEN UN-COMMENT THE BELOW LINE. This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
-              // openInfoWindow?.close() // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
+              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME (at maximum, in the map), THEN UN-COMMENT THE BELOW LINE. This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
+              openInfoWindow?.close()                                               // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
+              openInfoWindow = infowindow
               infowindow.open({
                 anchor: diner_marker,
                 map,
               })
 
-              if(!eventListenedInfoWindows.includes(infowindow)) { // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
-                eventListenedInfoWindows.push(infowindow) // let's not add a million eventlisteners for the same window
-                let rating = null
-  
-                if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
-                  setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
-                  
-                    document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars).
-                      star.addEventListener('click', (event) => {
-                        rating = event.currentTarget.dataset.value // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
-                        // event.currentTarget.classList.toggle('checked')
-                        
-                        // when a star in a 5-star line is clicked in the rating section (event 'click' above), then for EACH star in those 5 stars (code below):
-                        document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => {
-                          if (star.dataset.value <= rating) {
-                            star.classList.add('checked')     // e.g. if we're looking at star#2 ('<=', i.e. less or equal value) and the rating was 3, then ensure that star#2 is checked if it wasn't already (=yellow, not empty). This has to be checked as we don't know how many times the user is gonna change their mind or reclick before submitting the review!'.classList.add' is ok even if the class 'checked' is already present in the classList; 
-                          } else {
-                            star.classList.remove('checked')  // e.g. if we're looking at star#4 and the rating was 3, then make sure star#4 is not yellow, i.e. make sure that the class 'checked' is not in star#4's classList
-                          }
-                        })
-                        console.log(`User rated: ${rating} stars`)
-                      })
-                    })
-  
+              if(!eventListenedInfoWindows.includes(infowindow)) {                  // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
+                eventListenedInfoWindows.push(infowindow)                           // let's not add a million eventlisteners for the same window
+
+                if (user !== '' && user !== 'admin') {                              // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
+                  setTimeout(() => {                                                // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
+                    createStarRatingListener(restaurantID)                          // creates a onClick listener for each rating section star, coloring them orange if rated, removing color if rating is lower, etc. 
                     createFeedbackSendingListener(restaurantID, location, csrfToken)
-                    .then()
-                    
-                  },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
+                    .then() /* this function ^^ is asynchronous, but I'm not inside an 'async' function! So, I can't use 'await' here. So this .then is needed if I do something later here. A reminder - this 'then' wouldn't be needed right NOW, as I'm not doing anything after this function, but in case I will be, I'm leaving this as a reminder!*/
+                  },0) // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the infowindow.open (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this: ChatGPT! With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended!
                 }
                 // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the just-now-opened openInfoWindow.
-
-                openInfoWindow = infowindow
               }
             })
           } else {        // if getDetails doesn't succeed
