@@ -3,22 +3,25 @@ import safeHTML from "./safeHTML.js"
 import starRating from "./starRating.js"
 import createHTML from "./createHTML.js"
 import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
+import updateRestaurantInfo from "./updateRestaurantInfo.js"
 import createMarkerContainer from "./createMarkerContainer.js"
 import createStarRatingListener from "./createStarRatingListener.js"
 import createFeedbackSendingListener from "./createFeedbackSendingListener.js"
 
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
+
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
 // session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
-
 let tempData = await apiServices.getAll('/api/sessionuser') 
 const user = tempData.session_user
 console.log(`user: "${user}"`)
 
+// csrf token
 tempData = await apiServices.getAll('/api/sessioncsrf')
 const csrfToken = tempData.csrf_token
 // console.log(`csrfToken: "${csrfToken}"`)   // let's not show this to actual users
 
+// map csrf_token; I'm making sure the map page requests originate from the very same page and nowhere else.
 tempData = await apiServices.getAll('/api/map-token')
 const mapToken = tempData.map_token
 // console.log(`mapToken: "${mapToken}"`)     // let's not show this either c:
@@ -36,7 +39,7 @@ async function initMap() {
   const { PlacesService } = await google.maps.importLibrary('places')     // this is for getting exact locations, since based on only address (and google Geocoder API), many diners would get placed into the wrong end of a larger building, AND they would be placed on top of each other
 
   // The map itself, centered at Kumpula region. The restaurants from SQL db are set below
-  map = new Map(document.getElementById('map'), { // note: in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
+  map = new Map(document.getElementById('map'), {     // NB! in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
     zoom: 15,
     center: kumpula_pos,
     mapId: 'DEMO_MAP_ID',
@@ -45,11 +48,10 @@ async function initMap() {
   const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
   const service = new PlacesService(map)
 
-  // a placeholder. Why: (1) for each marker on the map, an infoWindow is created. (2) then an event listener "onClick" for each is created. Upon clicking and infowindow open, I first infowindow.close() the open one. If I didn't do this, the document.querySelectors that are supposed to be targeting the NEW opened infoWindow would be targeting the FIRST one instead, if they are located higher in the HTML 'document' object - this depends on the order in which the markers were originally created. Why let, not const? Because this changes every time a new infowindow is opened
-  let openInfoWindow
-  let eventListenedInfoWindows = []
+  let openInfoWindow                                  // a placeholder. Why: (1) for each marker on the map, an infoWindow is created. (2) then an event listener "onClick" for each is created. Upon clicking and infowindow open, I first infowindow.close() the open one. If I didn't do this, the document.querySelectors that are supposed to be targeting the NEW opened infoWindow would be targeting the FIRST one instead, if they are located higher in the HTML 'document' object - this depends on the order in which the markers were originally created. Why let, not const? Because this changes every time a new infowindow is opened.
+  let eventListenedInfoWindows = []                   // every clicked infoWindow will be listed here. Why: (1) I need to keep track of which infoWindows already have onClick event listener, otherwise on every click of the associated custom marker (map location marker) I would add another, then yet another event listener, which would cause problems (I had problems, that's why I added this - now it's working c:)
   
-  for (const location of json_of_locations) {       // for each location (=restaurant!) in the json object, add the location name and address to the map. For adding to map, the address needs to be converted to lat and lng, and Google's Geocoder is used for that
+  json_of_locations.forEach(location => {             // for each location (=restaurant!) in the json object, add the location name and address to the map, and a million other things more below. For adding to map, the address needs to be converted to lat and lng, and the Places API is used for that, as well as getting the place icon, opening hours, etc etc...
     const request = {
       query: `${location.name} ${location.address}`,  // Template strings of JS e.g., `${js_variable_name} some text`. I'm querying based on both the name and the location (from SQL db), of course. It's the only sensible minimum requirement to get the exact location of the exact diner that I'm 'looking for' based on the search. This ` ${name} ${address}` just means; name + " " + address, in case you're not familiar with JS. It's called 'template strings' in JS.
       fields: ['name', 'geometry', 'formatted_address', 'place_id', 'icon', 'icon_background_color']        // NB! place_id is needed for service.getDetails below, which is needed to get the opening hours (yeah...). A quite assenine system but that's how it works; so first you need to do this "findPlaceFromQuery", and THEN using the place_id obtained from that, ALSO do the service.getDetails after that. The 'name' and 'geometry.location' are needed also below; if you take 'name' out from here, you will get nothing for title:place.name below, which causes the problem that when you hover your mouse over the marker on the map, you won't see anything there (i.e., title doesn't exist then!). If you take 'geometry' out from here, you'll get an error as it tries to read undefined.location instead of geometry.location below -> no markers on the map. ref: (https://developers.google.com/maps/documentation/places/web-service/details)
@@ -73,18 +75,18 @@ async function initMap() {
 
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
             const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurantID}`)
-            let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // used in labelElement that's created below
-            const descriptionsLower = sensible_descriptions.map(d => d.toLowerCase()) // copy for testing
+            let sensibleDescriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // used in labelElement that's created below
+            const descriptionsLower = sensibleDescriptions.map(d => d.toLowerCase()) // copy for testing
             categoriesFromDb.forEach(categoryJSON => {
               if (!descriptionsLower.includes(categoryJSON.category.toLowerCase())) {
-                sensible_descriptions.push(categoryJSON.category)
+                sensibleDescriptions.push(categoryJSON.category)
               }
             })
 
-            let descriptionsHTML = sensible_descriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
+            let descriptionsHTML = sensibleDescriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
             
             // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time. See See 'style.css'.
-            const markerContainer = createMarkerContainer(place, placeDetails, sensible_descriptions)
+            const markerContainer = createMarkerContainer(place, placeDetails, sensibleDescriptions)
             
             // setting markers; choose the map 'map', position, and set the title that will be shown when you hover over the marker
             const diner_marker = new AdvancedMarkerElement({
@@ -105,18 +107,17 @@ async function initMap() {
             
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
             const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurantID}?only_visible_ratings=0`)
-
-            // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
-            
             const filtered_ratings_for_restaurant = ratings_for_restaurant.filter(item => item.rating_visible)
             const filtered_comments_for_restaurant = ratings_for_restaurant.filter(item => item.comment_visible) // for the table 'comments', it's just 'visible', not comment_visible
             const rating_average = filtered_ratings_for_restaurant.reduce((sum, current) => current.rating + sum, 0)/filtered_ratings_for_restaurant.length
             let starRatingHTML
             
+            // if the rating_average is 3, for example, then 3/5 stars are colored orange. See 'starRating' and 'style.css'
             filtered_ratings_for_restaurant.length !== 0
               ? starRatingHTML = starRating(rating_average)
               : starRatingHTML = ''
             
+            // createHTML.js
             const commentHTML = createHTML.commentHTML(restaurantID, filtered_ratings_for_restaurant, filtered_comments_for_restaurant, ratings_for_restaurant)
             const feedbackHTML = createHTML.feedbackHTML(restaurantID)
             const feedbackSentHTML = createHTML.feedbackSentHTML()
@@ -164,24 +165,7 @@ async function initMap() {
             // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories
             // LET'S DO THIS ONLY IF ADMIN IS LOGGED IN. This conserves db traffic and prevents unnecessary update-need-checks in app.py
             if (user === 'admin') {
-              const body = {
-                'restaurant_id': restaurantID,
-                'restaurant_name': placeDetails.name,
-                'address': place.formatted_address,
-                'descriptions':sensible_descriptions
-              }
-
-              const [response, data] = await apiServices.post('/api/update-name-address-categories', body, mapToken) // array destructuring
-          
-              if (response.ok) {
-                let updatedOrNot
-                data.updated === ''
-                  ?  updatedOrNot = `Database for "${placeDetails.name}" was already up to date: no name, address or category updates were done in db.`
-                  :  updatedOrNot = `UPDATED database for "${placeDetails.name}" successfully as follows:`
-                console.log(updatedOrNot, data)
-              } else {
-                console.error(`Update for ${placeDetails.name} failed:`, data)
-              }
+              await updateRestaurantInfo(restaurantID, placeDetails, place, sensibleDescriptions, mapToken) // uses 'apiServices.post', hence 'await' is needed here 
             }
 
             const infowindow = new google.maps.InfoWindow({
@@ -191,7 +175,7 @@ async function initMap() {
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
             diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
-              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME (at maximum, in the map), THEN UN-COMMENT THE BELOW LINE. This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
+              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME (at maximum, in the map), THEN UN-COMMENT THE BELOW LINE (currently uncommented). This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
               openInfoWindow?.close()                                               // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
               openInfoWindow = infowindow
               infowindow.open({
@@ -220,7 +204,7 @@ async function initMap() {
         console.error("findPlaceFromQuery was not successful for the following reason: " + status) // this is printed in browser
       }
     })
-  }                       // 'for const location of json_of_locations' ends here!
+  })                      // 'json_of_locations.forEach' ends here!
 }
 
 initMap()

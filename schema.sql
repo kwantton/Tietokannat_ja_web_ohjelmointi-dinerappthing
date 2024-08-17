@@ -16,6 +16,7 @@ CREATE TABLE restaurants (
     restaurant_visible BOOLEAN
 );
 
+
 -- BY DEFAULT, I'm showing (restaurant_visible=TRUE) only 1 diner, 1 bar and 1 cafe. This is to prevent fetching 20 restaurants through the API by default; I don't want my free Cloud credits to run out before I can even deploy the app online, lol
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Krung Thep Thai Bistro Arabia', 'Hämeentie 153, 00560 Helsinki', TRUE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki', FALSE);
@@ -104,12 +105,12 @@ CREATE TABLE ratings (
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 1, 1, 3, NOW(), TRUE);
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 2, 2, 4, NOW(), TRUE);
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 3, 3, 3, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 4, 5, 5, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 5, 6, 3, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 6, 7, 5, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 7, 8, 4, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 8, 9, 3, NOW(), TRUE);
-INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 9, 10, 4, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 4, 4, 5, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 5, 5, 3, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 6, 6, 5, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 7, 7, 4, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 8, 8, 3, NOW(), TRUE);
+INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 9, 9, 4, NOW(), TRUE);
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 10, 10, 3, NOW(), TRUE);
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 11, 11, 5, NOW(), TRUE);
 INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (1, 12, 12, 5, NOW(), TRUE);
