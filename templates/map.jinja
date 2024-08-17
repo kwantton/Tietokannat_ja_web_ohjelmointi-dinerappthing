@@ -12,9 +12,9 @@
         <script>
             const mapSearch = event => {
                 const query = event.currentTarget.value.toLowerCase() // if the search box says 'thai', then query = 'thai'
-                const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
+                const markerContainers = document.querySelectorAll('#map .marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
                 markerContainers.forEach(markerContainer => {
-                    markerContainer.querySelectorAll('#label-element').forEach(labelElement => {
+                    markerContainer.querySelectorAll('.label-element').forEach(labelElement => {
                         if (query.length>50) {
                             alert("The query must be 50 characters or under")
                         } else if (query !== '') {
@@ -39,7 +39,7 @@
         <script>
             const descriptionsSearch = event => {
                 const query = event.currentTarget.value.toLowerCase() // if the search box says 'thai', then query = 'thai'
-                const markerContainers = document.querySelectorAll('#map #marker-container') // I have set id = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (#marker-container) is used
+                const markerContainers = document.querySelectorAll('#map .marker-container') // I have set class = 'marker-container' for every marker container in 'index.js' - using this, I can hide/show each of them. Note: why two #? This is hierarchichal; the first one (#map) is the highest-level (parent) element to search for (with id map), and from all its children elements, the second search term (.marker-container) is used
                 // console.log("markerContainers:", markerContainers)
                 markerContainers.forEach(markerContainer => {
                     markerContainer.querySelectorAll('#label-element').forEach(labelElement => {    

@@ -1,4 +1,4 @@
-// Initialize and add the map
+
 import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
 import starRating from "./starRating.js"
 import usersFeedback from "./usersFeedback.js"
@@ -7,7 +7,7 @@ import safeHTML from "./safeHTML.js"
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
 // session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
-window.zIndex = 1000
+
 let data1 = await apiServices.getAll('/api/sessionuser') 
 const user = data1.session_user
 console.log(`user: "${user}"`)
@@ -68,21 +68,14 @@ async function initMap() {
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
 
-            // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time
+            // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time. See See 'style.css'.
             const markerContainer = document.createElement('div')     // normal JS, creating a new HTML element
-            markerContainer.style.display = 'flex'
-            markerContainer.style.flexDirection = 'column'
-            markerContainer.style.alignItems = 'center'
-            markerContainer.id = 'marker-container'                   // for the search box above the map; these markers are what I want to show / hide based on the search query
+            markerContainer.className = 'marker-container'            // for the search box above the map; these markers are what I want to show / hide based on the search query
 
             // creating the markerElement and making it pretty (more in 'style.css')
             const markerElement = document.createElement('div')            
             markerElement.className = 'custom-marker'
-            markerElement.style.backgroundColor = '#FCD12A'
             markerElement.style.backgroundImage = `url(${place.icon})`
-            markerElement.style.backgroundSize = 'contain'
-            markerElement.style.width = '26px'
-            markerElement.style.height = '26px'
             // console.log("place.icon:", place.icon)                 // the URL for the icon png image
 
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
@@ -96,16 +89,11 @@ async function initMap() {
             })
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
 
-            // text label element for the marker above
+            // text label element for the marker above. See 'style.css'
             const labelElement = document.createElement('span')
             labelElement.textContent = placeDetails.name              // (1) a label for the marker; otherwise you wouldn't see the name of the place by default. (2) Also, the search-by-name in 'map.jinja' uses this!
             labelElement.descriptions = sensible_descriptions         // I'M ADDING THIS CUSTOM ATTRIBUTE HERE for the search function 'map-search-descriptions' in 'map.jinja'. Because I'm already using the above 'labelElement.textContent' for the search that's based on the place name, it's most convenient to do this -> I can use the same logic in the search that's based on descriptions c:
-            labelElement.style.marginTop = '5px'                      // position of the text relative to the marker; let's put it BELOW the marker itself            
-            labelElement.style.backgroundColor = 'white'              // a background color to the label
-            labelElement.style.padding = '2px 5px'                    // some padding to the label
-            labelElement.style.borderRadius = '3px'                   // round the corners of the label
-            labelElement.style.boxShadow = '0 0 3px rgba(0,0,0,0.3)'
-            labelElement.id = 'label-element'
+            labelElement.className = 'label-element'
 
             // put the marker and its label in the markerContainer
             markerContainer.appendChild(markerElement)
@@ -265,11 +253,6 @@ async function initMap() {
                 anchor: diner_marker,
                 map,
               })
-
-              // Bring the clicked InfoWindow to the front by increasing its z-index. The higher the z-index, the more 'front' the element is
-              const iwOuter = document.querySelector(`#info-window-content-${restaurantID}`);     // google maps style infowindow = gm-style-iw
-              iwOuter?.style.setProperty('zIndex', zIndex); // Adjust z-index to a higher value, then increment by one - to bring the just-clicked infoWindow to the front. I can't just "=" here because I'm using the optional chaining '?.', that prevents it.
-              zIndex++
 
               if(!eventListenedInfoWindows.includes(infowindow)) { // NB! If you don't do this, it will add a million listeners. Then, because of the alert box that says "please provide feedback text and a rating before submitting", it will alert you x times if you've clicked on the diner_marker x times! This was annoying as hell! So, if the user is clicking again the same window, then DON'T add copies of the same eventListener! (and don't do any other of these below, as they would be unnecessary!)
                 eventListenedInfoWindows.push(infowindow) // let's not add a million eventlisteners for the same window

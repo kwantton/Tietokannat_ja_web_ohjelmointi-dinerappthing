@@ -4,7 +4,8 @@ from db import db, text
 from flask import session, jsonify, request
 from helpers import select_all
 
-@app.route('/api/sessioncsrf')         # for providing session['csrf_token'] to 'index.js'
+# session['csrf_token'] to 'index.js'
+@app.route('/api/sessioncsrf')         
 def get_sessioncsrf():
     try:
         csrf_token = session['csrf_token']
@@ -13,7 +14,8 @@ def get_sessioncsrf():
     print('csrf_token:', csrf_token)
     return jsonify({'csrf_token':csrf_token}) 
 
-@app.route('/api/map-token')            # for providing session['csrf_token'] to 'index.js'
+# session['csrf_token'] in 'index.js', this time map token
+@app.route('/api/map-token')            
 def get_map_token():
     map_token = session['map_token']
     print('map_token:', map_token)
