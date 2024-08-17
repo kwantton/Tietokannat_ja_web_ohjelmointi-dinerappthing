@@ -23,7 +23,7 @@ The admin can add new places on the map by querying based on a rough name and a 
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
-- refactor and clean-up
+- small refactor and clean-up
 
 ## Done
 - [x] markers on the map; icon based on if it's a restaurant, bar, cafe, etc., and there's a text below each icon by default (this is also ctrl-f:ble!)
@@ -43,7 +43,10 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] admin can permanently DELETE categories (in addition to disabling them), and in case of a successful DELETE, the respective category with its associated buttons are "display.style = none"'d -> no need to refresh.
 - [x] csrf_token for every POST, UPDATE or DELETE -kind of form, checking according to session.csrf_token in app.py
 - [x] deployed in fly.io, testable at "https://dinerappthing.fly.dev/"! You can create a new account, look at the restaurant map, write comments and ratings, etc. I currently have only a couple so that I don't run out of my free Google Places API.
-- [x] I'm always closing the previous infoWindow before adding the eventlisteners to the new one (onclick), so that the comment and rating are targeted towards only the currently open infoWindow. Since I use documentQuerySelector when handling the infoWindows, and since it was previously possible to open multiple infoWindows, the querySelectors were previously breaking down when the user tried to give a rating and a feedback comment when multiple boxes were open at the same time.
+- [x] fixed documentQuerySelector ambiquities in case multiple infoWindows were open. Now it's possible to hold open as many infoWindows as one wants, BUT I chose to limit it to one as it gets messy and incovenient if one has to manually close the previous one every time when opening a new one.
+- [x] I'm always closing the previous infoWindow when a new one is opened. It would be possible to hold open multiple at once, but it gets messy (the infoWindows are quite big).
+- [x] MAJOR refactorization (splitting into modules) and clean-up of 'index.js'; from 350 rows length down to 173 rows. Also cleanup.
+- [x] division into app.py, db.py, helpers.py, routes.py, and /api/admin.py, as well as /api/indexjs.py (for JS communication with psql backend)
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
