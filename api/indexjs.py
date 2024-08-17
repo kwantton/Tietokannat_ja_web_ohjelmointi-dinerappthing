@@ -30,7 +30,7 @@ def get_restaurants_json():
 # NB! I'm filtering out the restaurants where restaurant_visible = FALSE, BUT I'm not filtering out comments or ratings here; I'm doing that filtering in the index.js JS
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
-    only_visible_ratings = request.args.get('only_visible_ratings', default='0') == '1' # bool: True or False?
+    only_visible_ratings = request.args.get('only_visible_ratings', default='0') == '1' # bool: True or False? This is the '?only_visible_ratings=1' or '...=0' from the request. Awesome!
     query = '''
             SELECT * 
                 FROM 
