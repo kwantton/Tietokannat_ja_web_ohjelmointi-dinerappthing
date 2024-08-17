@@ -103,7 +103,7 @@
         <ul>          
             <script type="module">
 
-                import filterRatingsForRestaurantId from '../static/filterRatingsForRestaurantId.js'
+                import apiServices from '../static/apiServices.js'
 
                 const placeId_placeInfo = []                        // array of JSONs: [ {id: {...}}, ... ]. Each JSON shall have properties 'id', 'name', 'average', 'nRatings' and 'average' (nRatings = number of ratings)
 
@@ -114,7 +114,7 @@
 
                 const promises = restaurants.map(async restaurant => {  // all these Promises (because 'async'!) are functions; this .map gathers them inside a list.
 
-                    const filteredRatings = await filterRatingsForRestaurantId(restaurant.id) // because the function is async, I have to 'await' for it to finish. Without await, you'd get a 'promise' instead - doesn't work!
+                    const filteredRatings = await apiServices.getAll(`/api/ratings/${restaurant.id}?only_visible_ratings=1`) // because the function is async, I have to 'await' for it to finish. Without await, you'd get a 'promise' instead - doesn't work!
                     const ratingAverage = filteredRatings.reduce((sum, current) => current.rating + sum, 0)/filteredRatings.length
                     const restaurantId_info = {
                         'restaurant_id' : restaurant.id,

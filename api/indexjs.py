@@ -30,7 +30,8 @@ def get_restaurants_json():
 # NB! I'm filtering out the restaurants where restaurant_visible = FALSE, BUT I'm not filtering out comments or ratings here; I'm doing that filtering in the index.js JS
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
-    sql = text('''
+    only_visible_ratings = request.args.get('only_visible_ratings', default='0') == '1' # bool: True or False?
+    query = '''
             SELECT * 
                 FROM 
                     restaurants 
@@ -40,7 +41,7 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
                     restaurants.id = ratings.restaurant_id 
                 LEFT JOIN 
                     comments 
-                ON 
+                ON
                     ratings.comment_id = comments.id 
                 LEFT JOIN
                     users 
@@ -49,7 +50,10 @@ def get_ratings_and_comments_by_restaurant_id(restaurant_id):
                 WHERE
                     restaurants.id = :restaurant_id
                     AND restaurants.restaurant_visible
-               ''')
+               '''
+    if only_visible_ratings:
+        query += ' AND ratings.rating_visible'
+    sql = text(query)
     result = db.session.execute(sql, {'restaurant_id':restaurant_id})
     ratings_with_comments = result.fetchall()
     ratings_with_comments_list = [{'restaurant_id': row.restaurant_id, 'restaurant_name': row.restaurant_name, 'address': row.address, 'restaurant_visible':row.restaurant_visible, 'username':row.username, 'user_id':row.user_id, 'comment_id':row.comment_id, 'created_at':row.created_at, 'rating':row.rating, 'comment':row.comment, 'comment_visible':row.visible, 'rating_visible':row.rating_visible} for row in ratings_with_comments]

@@ -129,7 +129,7 @@ async function initMap() {
               : openNowMsg = '<p style=color:red;position:relative>CLOSED</p>'    // if not openNow, this row, with red text
             
             // address, comment, comment_id (from comments), created_at (from comments), rating, restaurant_id, restaurant_name. I have the restaurant name etc. just to see that I have the correct fields, that the SQL query works, etc
-            const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurantID}`)
+            const ratings_for_restaurant = await apiServices.getAll(`/api/ratings/${restaurantID}?only_visible_ratings=0`)
 
             // console.log("ratings_for_restaurant:",ratings_for_restaurant) 
             
