@@ -1,23 +1,25 @@
 
-import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
-import starRating from "./starRating.js"
-import usersFeedback from "./usersFeedback.js"
 import safeHTML from "./safeHTML.js"
+import starRating from "./starRating.js"
+import createHTML from "./createHTML.js"
+import apiServices from "./apiServices.js" // import the whole JSON as 'apiServices' -> e.g. a basic fetch GET is now usable as 'apiServices.get(url)'
+import createMarkerContainer from "./createMarkerContainer.js"
+import createFeedbackSendingListener from "./createFeedbackSendingListener.js"
 
 // ^^ if you're unfamiliar with JS: since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 // seeing who is logged in. If '', then that means no-one (there's a minimum length to the username, so '' is of course ok to interepret as 'no-one logged in')
 // session['user'] is only set as non-'' when a user is logged in. I had set it as '' if no-one is logged in, in app.py for route /api/sessionuser.
 
-let data1 = await apiServices.getAll('/api/sessionuser') 
-const user = data1.session_user
+let tempData = await apiServices.getAll('/api/sessionuser') 
+const user = tempData.session_user
 console.log(`user: "${user}"`)
 
-let data2 = await apiServices.getAll('/api/sessioncsrf')
-const csrfToken = data2.csrf_token
+tempData = await apiServices.getAll('/api/sessioncsrf')
+const csrfToken = tempData.csrf_token
 // console.log(`csrfToken: "${csrfToken}"`)   // let's not show this to actual users
 
-let data3 = await apiServices.getAll('/api/map-token')
-const mapToken = data3.map_token
+tempData = await apiServices.getAll('/api/map-token')
+const mapToken = tempData.map_token
 // console.log(`mapToken: "${mapToken}"`)     // let's not show this either c:
 
 let map
@@ -68,36 +70,20 @@ async function initMap() {
         service.getDetails(detailRequest, async (placeDetails, detailStatus) => {
           if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
 
-            // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time. See See 'style.css'.
-            const markerContainer = document.createElement('div')     // normal JS, creating a new HTML element
-            markerContainer.className = 'marker-container'            // for the search box above the map; these markers are what I want to show / hide based on the search query
-
-            // creating the markerElement and making it pretty (more in 'style.css')
-            const markerElement = document.createElement('div')            
-            markerElement.className = 'custom-marker'
-            markerElement.style.backgroundImage = `url(${place.icon})`
-            // console.log("place.icon:", place.icon)                 // the URL for the icon png image
-
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
             const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurantID}`)
-            let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) 
+            let sensible_descriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // used in labelElement that's created below
             const descriptionsLower = sensible_descriptions.map(d => d.toLowerCase()) // copy for testing
             categoriesFromDb.forEach(categoryJSON => {
               if (!descriptionsLower.includes(categoryJSON.category.toLowerCase())) {
                 sensible_descriptions.push(categoryJSON.category)
               }
             })
+
             let descriptionsHTML = sensible_descriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
-
-            // text label element for the marker above. See 'style.css'
-            const labelElement = document.createElement('span')
-            labelElement.textContent = placeDetails.name              // (1) a label for the marker; otherwise you wouldn't see the name of the place by default. (2) Also, the search-by-name in 'map.jinja' uses this!
-            labelElement.descriptions = sensible_descriptions         // I'M ADDING THIS CUSTOM ATTRIBUTE HERE for the search function 'map-search-descriptions' in 'map.jinja'. Because I'm already using the above 'labelElement.textContent' for the search that's based on the place name, it's most convenient to do this -> I can use the same logic in the search that's based on descriptions c:
-            labelElement.className = 'label-element'
-
-            // put the marker and its label in the markerContainer
-            markerContainer.appendChild(markerElement)
-            markerContainer.appendChild(labelElement)
+            
+            // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time. See See 'style.css'.
+            const markerContainer = createMarkerContainer(place, placeDetails, sensible_descriptions)
             
             // setting markers; choose the map 'map', position, and set the title that will be shown when you hover over the marker
             const diner_marker = new AdvancedMarkerElement({
@@ -106,7 +92,7 @@ async function initMap() {
               title: placeDetails.name,
               content: markerContainer
             }) 
-            // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements
+            // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements.
 
             const openingHours = placeDetails.opening_hours?.weekday_text || []   // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
             const openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join('') // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
@@ -130,63 +116,20 @@ async function initMap() {
               ? starRatingHTML = starRating(rating_average)
               : starRatingHTML = ''
             
+            const commentHTML = createHTML.commentHTML(restaurantID, filtered_ratings_for_restaurant, filtered_comments_for_restaurant, ratings_for_restaurant)
+            const feedbackHTML = createHTML.feedbackHTML(restaurantID)
+            const feedbackSentHTML = createHTML.feedbackSentHTML()
+            const signInUltimatumHTML = createHTML.signInUltimatumHTML()
+            
             let noCommentsYetHTML = ''
             if(filtered_comments_for_restaurant.length == 0) {noCommentsYetHTML = `<p id='no-comments-HTML-${restaurantID}'>no comments yet</p>`}
-            let commentHTML = `<ul id="comment-HTML-${restaurantID}"></ul>`
-            if (filtered_ratings_for_restaurant.length !== 0 || filtered_comments_for_restaurant.length !== 0) {
-              commentHTML = `
-                  <ul id="comment-HTML-${restaurantID}">` + 
-                    ratings_for_restaurant.map(item => {
-                      if (item.comment_visible || item.rating_visible) {
-                          return `
-                            <li>
-                              <p>
-                                ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''} 
-                                ${item.rating_visible ? `${item.rating}/5 <br>` : ''}
-                                (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})
-                              </p>
-                            </li>`
-                    } else {
-                      return ''
-                    }
-                    }).join('') + // map returns an array (i.e., [something1, something2]), so here I'm converting it to string -> commentHTML += this string c:
-                  '</ul>'
-            } else {
-              // console.log("ei ollut kommentteja EIKÄ ratingsejä!")
-              // pass
-            }    
-            // 'comment_visible' refers to table comments, for which every comment is by default 'visible:TRUE', UNLESS the admin has made it invisible
-
-            const feedbackHTML = `
-            <div>
-              <p>Feedback:</p>
-              <textarea id='feedback-text-${restaurantID}' placeholder='feedback c:'></textarea>
-              <p>Rate by clicking on the stars:</p>
-              <div class="rating-posting-section-stars" id='rating-posting-section-stars-${restaurantID}'>
-                ${starRating(0) /** this is the star rating (1-5) to be clicked by the user. 'onclick's for each of these 'rating-posting-section-stars' will be set onClick of the infoWindow further below c: */}
-              </div>
-              <button id='send-rating-${restaurantID}'>Submit</button>
-            </div>
-            `
-            const signInUltimatumHTML = `
-            <div>
-              <p>Want to share your experience? Sign in provide feedback!</p>
-              <a href='/'> login </a>
-            </div>
-              `
-            const feedbackSentHTML = `
-            <div>
-              <p> Feedback sent! </p>
-              <a href='/'> home </a>
-            </div>
-              `
 
             // THIS BELOW IS THE ACTUAL CONTENT OF EACH RESTAURANT'S INFOWINDOW. This is kinda like a poor man's React (FullStack Open -course teaches the proper way of doing these using React and Node)
             // NB! There's not much user-originated HTML left to sanitize below, HOWEVER - placeDetails.name could be whatever. What if the name of the place has ' or < in it, for example? As for the others, 'placeDetails.x' are all derived from Google API, and commentHTML was checked already c:
               const infoWindowContent =
             ` 
             <div id="info-window-content-${restaurantID}"> 
-                <h1 id="firstHeading" class="firstHeading">${safeHTML(placeDetails.name)}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
+                <h1 class="firstHeading">${safeHTML(placeDetails.name)}</h1> <!-- NOTE! This is the OFFICIAL name. 'location.name', on the other hand, would be whatever is saved in the database table 'restaurants'. Notably, admin can add new places to that table, so it's best to use the official name instead!-->
                 ${starRatingHTML}
                 <div id="bodyContent">
                   <p><b>${safeHTML(place.formatted_address)}</b></p>
@@ -261,7 +204,7 @@ async function initMap() {
                 if (user !== '' && user !== 'admin') {  // if an actual user is logged in, then take care of the comment + rating section logic (clicking on stars, )
                   setTimeout(() => { // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                   
-                    document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars). SIDE-EFFECT: if multiple infoBoxes are open, all of these will be selected!
+                    document.querySelectorAll(`#rating-posting-section-stars-${restaurantID} .fa-star`).forEach(star => { // this looks for .rating-posting-section-stars, then inside that, for .fa-star (class fa-star inside class rating-posting-section-stars).
                       star.addEventListener('click', (event) => {
                         rating = event.currentTarget.dataset.value // the 'dataset' is an object that contains all 'data-[insert_name_here]' things, that is, custom attributes, as I explain in the starRating.js file. Since these values are 1,2,3,4 an 5 (in order left to right), you get the rating 1...5 from the dataset.value of the star that was clicked
                         // event.currentTarget.classList.toggle('checked')
@@ -278,35 +221,9 @@ async function initMap() {
                       })
                     })
   
-                    // UPON SENDING THE FEEDBACK (comment) AND/OR RATING (stars) by pressing the button with id 'send-rating'
-                    document.querySelector(`#send-rating-${restaurantID}`).addEventListener('click', async event => {
-                      event.preventDefault() // we don't want to reload the whole page after sending the feedback
-                      const comment = document.querySelector(`#feedback-text-${restaurantID}`).value
-                      if (comment === '' || rating === null) {
-                        alert("please provide feedback text and a rating before submitting")
-                      } else {
-                        const restaurant_name = location.name
-                        const body = {
-                          restaurant_id: restaurantID,
-                          restaurant_name,
-                          comment}
-                        if(rating) {
-                          body.rating = rating  // if a rating exists (is not null), then include that in the body
-                        } else {
-                          //pass
-                        }
-                        document.querySelector(`#feedback-section-${restaurantID}`).style.display = 'none'
-                        document.querySelector(`#feedback-sent-${restaurantID}`).style.display = 'inline-block'
-                        document.querySelector(`#feedback-text-${restaurantID}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
-                        
-                        const [response, data] = await apiServices.post('/api/feedback/', body, csrfToken)
-                        console.log(data)
-                        const addedComment = usersFeedback(body.comment, rating)
-                        document.querySelector(`#comment-HTML-${restaurantID}`).appendChild(addedComment)     // returns HTML with "<comment id="new-comment">". Here, below, I'm inserting as .textContent the new comment. This is safe, see below comment:
-                        document.querySelector(`#noratings-${restaurantID}`)?.remove()                         // WORKS. ?. is called optional chaining; if the left side from ? is null or undefined, then the right side will result in undefined (=the right side is then not executed, it just returns undefined instead). The reason I can't just ?.style.display = 'none' is that you can't assign (=), using '=', something to something that might or might not exist (that is, the ?. of optional chaining)!
-                        document.querySelector(`#no-comments-HTML-${restaurantID}`)?.remove()                 // if there were no comments yet, no there are, so no need to say 'no comments yet' anymore c:   
-                    }
-                    })
+                    createFeedbackSendingListener(restaurantID, location, csrfToken)
+                    .then()
+                    
                   },0) // yes, the '0' ms timeout does work; it enforces this code block to wait for the rendering of the infoWindow first. I tried taking setTimeout away, and it breaks the star rating system c:
                 }
                 // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the just-now-opened openInfoWindow.

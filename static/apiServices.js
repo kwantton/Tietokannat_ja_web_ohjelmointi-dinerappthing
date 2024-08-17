@@ -1,5 +1,6 @@
+// a standard GET.
 const getAll = async url => {
-    const response = await fetch(url) // a basic universal GET
+    const response = await fetch(url) 
     const data = await response.json()
     return data
 }
