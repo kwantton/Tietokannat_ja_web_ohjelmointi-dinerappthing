@@ -3,7 +3,7 @@
 ### for online testing!
 Now the application can be used at https://dinerappthing.fly.dev/.
 
-For peer reviews: admin password is 'admin1234'.
+For peer reviews: admin password is 'admin1234', username is 'admin'.
 
 If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants to users, add new categories, hide and delete old categories, and toggle visibility of each rating and comment separately.
 
