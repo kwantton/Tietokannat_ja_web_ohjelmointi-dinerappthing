@@ -7,8 +7,7 @@
 
     <div id="map-search-name"> <!-- for searching restaurants above in the map -->
         <h3> name search from places on the map </h3>
-        <p> press enter to update the search </p>
-        <input name="search-query" onchange="mapSearch(event)">        <!-- onchange is activated every time you push enter -->
+        <input name="search-query" oninput="mapSearch(event)">        <!-- oninput = every time the user types; onchange is activated every time you push enter -->
         <script>
             const mapSearch = event => {
                 const query = event.currentTarget.value.toLowerCase() // if the search box says 'thai', then query = 'thai'
@@ -34,8 +33,7 @@
 
     <div id="map-search-descriptions"> <!-- for searching restaurants above in the map -->
         <h3> category search from places on the map </h3>
-        <p> press enter to update the search </p>
-        <input name="search-query" onchange="descriptionsSearch(event)">        <!-- onchange is activated every time you push enter -->
+        <input name="search-query" oninput="descriptionsSearch(event)">        <!-- oninput = every time the user types -->
         <script>
             const descriptionsSearch = event => {
                 const query = event.currentTarget.value.toLowerCase() // if the search box says 'thai', then query = 'thai'
@@ -69,8 +67,7 @@
     <div id="search-function"> <!-- This search is for querying the restaurant list BELOW, not for searching restaurants above in the map.-->
         <h2> search </h2>
         <p> name search for the list below </p>
-        <p> press enter to update the search </p>
-        <input name="search-query" onchange="search(event)">
+        <input name="search-query" oninput="search(event)">
     
         <script>
             const search = event => {
