@@ -101,14 +101,14 @@ def login():
     
     # PASSWORD CHECKING
     if username == 'admin':
-        if password == admin_password:                  # admin_password is stored as env var (as-is), hence safe
+        if password == admin_password:                                              # admin_password is stored as env var (as-is), hence safe
             session['username'] = username
             return redirect('/')
         else:
             return render_template('error.jinja', message='username or password is wrong')
     else:
         try:
-            user = result.fetchone()                    # the row has two values: u_name and p_word.
+            user = result.fetchone()                                                # the row has two values: u_name and p_word.
             if check_password_hash(user.password, password):
                 session['username'] = username
                 return redirect('/')
@@ -120,14 +120,14 @@ def login():
         
 @app.route('/logout')
 def logout():
-    if session['username']:                             # the user may try this url without being logged in, and that's what this check is for
+    if session['username']:                                                         # the user may try this url without being logged in, and that's what this check is for
         del session['username']
     if session['csrf_token']:
         del session['csrf_token']
     return redirect('/')
 
 # btw there's no point in csrf tokening this. All they can do is add a user, that's it.
-@app.route('/register', methods=['GET','POST'])         # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
+@app.route('/register', methods=['GET','POST'])                                     # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
 def register():
     if request.method == 'POST':
         session['where'] = app.config.get('WHERE')
@@ -157,7 +157,6 @@ def register():
                 sql = text('SELECT * FROM users WHERE username=:username')
                 result = db.session.execute(sql, {'username':username})
                 username_already_exists = result.fetchone()
-                #print('username_already_exists:', username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
                 if username_already_exists:
                     return render_template('error.jinja', message='username is already taken')
                 

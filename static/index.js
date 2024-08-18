@@ -126,7 +126,7 @@ async function initMap() {
               openingHoursHTML, descriptionsHTML, rating_average, filtered_ratings_for_restaurant, noCommentsYetHTML, commentHTML, 
               user, feedbackHTML, signInUltimatumHTML, feedbackSentHTML)
 
-            // BEFORE ANYTHING ELSE, let's first also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories. Only if admin is logged in.
+            // let's also update the sql database restaurant name and address based on the ACCURATE info that was just fetched from Places API above. Why? Because in the admin page of this site, the admin can add ROUGH names and addresses to the db, based on which the query to Places API was initially made above. However, these might be inaccurate names and addresses, and now we have the perfect chance to update that info. Thanks to this, it's also possible to get accurate info easier in the restaurant list below the map. Also, I'm adding API-fetched descriptions to the list of restaurant_categories. Only if admin is logged in.
             if (user === 'admin') {
               await updateRestaurantInfo(restaurantID, placeDetails, place, sensibleDescriptions, mapToken) // uses 'apiServices.post', hence 'await' is needed here 
             }
@@ -138,9 +138,9 @@ async function initMap() {
 
             // ADD EVENT LISTENER so that when the user clicks on the marker on the map, all the wanted info (infowindow) is shown
             diner_marker.addListener('click', () => { // apparently the old version, 'addListener', is mandatory here. I tried changing it to 'addEventListener' -> the whole shit broke down. Lol.
-              // IF YOU ONLY WANT TO HAVE ONE INFOWINDOW OPEN AT A TIME (at maximum, in the map), THEN UN-COMMENT THE BELOW LINE (currently uncommented). This was my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
+              // max 1 infowindow open at a time - less mess (in the map). Comment out if you want to have multiple open at the same time. This was originally my emergency solution to solve the querySelector ambiquity, which was ultimately caused by me not naming the 'feedback-text's and 'send-rating's according to restaurant-id, but now that I've named the id's uniquely (as should always be done in JS), that problem should no longer exist - hence, no need to have this max-1-limit any longer c:
               openInfoWindow?.close()                                               // ?. is called optional chaining; if the thing on the left of ?. is nullish, the right side won't be executed; instead, undefined will be returned.
-              openInfoWindow = infowindow
+              openInfoWindow = infowindow                                           // now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the just-now-opened openInfoWindow.
               infowindow.open({
                 anchor: diner_marker,
                 map,
@@ -153,10 +153,9 @@ async function initMap() {
                   setTimeout(() => {                                                // NB! the setTimeout() is needed; it causes this section of the code to wait for the above diner_marker to render fully, i.e. makes the code synchronous regarding these two, enforcing order of execution. Without this setTimeout, adding eventListeners to the rating stars below in the infoWindow doesn't work - I tried, for many hours, and this was the solution that chatGPT suggested (and I confirmed by googling it's true)
                     createStarRatingListener(restaurantID)                          // creates a onClick listener for each rating section star, coloring them orange if rated, removing color if rating is lower, etc. 
                     createFeedbackSendingListener(restaurantID, location, csrfToken)
-                    .then() /* this function ^^ is asynchronous, but I'm not inside an 'async' function! So, I can't use 'await' here. So this .then is needed if I do something later here. A reminder - this 'then' wouldn't be needed right NOW, as I'm not doing anything after this function, but in case I will be, I'm leaving this as a reminder!*/
-                  },0) // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the infowindow.open (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this: ChatGPT! With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended!
+                    .then(/* placeholder */)                                        // this function 'createFeedbackSendingListener' is asynchronous, but I'm not inside an 'async' function, so I can't use 'await' here -> '.then' is needed instead IF I do something after this function. A reminder - I'm currently not doing anything after the function, but in case I will be, I'm leaving 'then()' as a reminder
+                  },0)                                                              // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the infowindow.open (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this: ChatGPT! With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended!
                 }
-                // so, now that the (new) infoWindow has been clicked open after closing the previous one, make the current, opened infoWindow the just-now-opened openInfoWindow.
               }
             })
           } else {        // if getDetails doesn't succeed
