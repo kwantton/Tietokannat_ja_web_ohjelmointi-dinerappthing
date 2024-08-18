@@ -8,8 +8,8 @@ const safeHTML = (str) => {
             '"': '&quot;',
             "'": '&#39;'
         };
-        return escape[match];
-    });
+        return escape[match]
+    })
 }
 // example: 
 // 'safeHTML('<script>alert("morjens! :D")</script>')'

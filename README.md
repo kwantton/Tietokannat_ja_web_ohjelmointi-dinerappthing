@@ -21,7 +21,12 @@ The admin can add new places on the map by querying based on a rough name and a 
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
+- put a max length for password and username
 - small refactor and clean-up
+
+## would-be-cool-if
+- an 'auto-close' button for the map so that the user could toggle if it's possible to view multiple infoWindows at once (default: no currently, since it's messy as the infoWindows are big)
+- reclicking an infoWindow would pop it on top of the others, if viewing multiple at the same time is possible (currently no, it would be messy and inconvenient to have that ability on by default). For some reason, I couldn't get the z-index to work for this purpose - don't know why!
 
 ## Done
 - [x] markers on the map; icon based on if it's a restaurant, bar, cafe, etc., and there's a text below each icon by default (this is also ctrl-f:ble!)
@@ -45,6 +50,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] I'm always closing the previous infoWindow when a new one is opened. It would be possible to hold open multiple at once, but it gets messy (the infoWindows are quite big).
 - [x] MAJOR refactorization (splitting into modules) and clean-up of 'index.js'; from 350 rows length down to 173 rows. Also cleanup.
 - [x] division into app.py, db.py, helpers.py, routes.py, and /api/admin.py, as well as /api/indexjs.py (for JS communication with psql backend)
+- [x] if a username exists already, notify at once (in JS) when someone tries to create a new account
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.

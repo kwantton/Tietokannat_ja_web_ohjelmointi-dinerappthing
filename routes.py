@@ -95,18 +95,19 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    sql = text('SELECT username, password FROM users WHERE username=:username') # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
-    result = db.session.execute(sql, {'username':username, 'password':password})  # HASHED pw into db
+    sql = text('SELECT username, password FROM users WHERE username=:username')     # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
+    result = db.session.execute(sql, {'username':username, 'password':password})    # HASHED pw into db
     
+    # PASSWORD CHECKING
     if username == 'admin':
-        if password == admin_password:                          # admin_password is stored as env var
+        if password == admin_password:                  # admin_password is stored as env var (as-is), hence safe
             session['username'] = username
             return redirect('/')
         else:
             return render_template('error.jinja', message='username or password is wrong')
     else:
         try:
-            user = result.fetchone()        # the row has two values: u_name and p_word.
+            user = result.fetchone()                    # the row has two values: u_name and p_word.
             if check_password_hash(user.password, password):
                 session['username'] = username
                 return redirect('/')
@@ -127,33 +128,41 @@ def logout():
 # btw there's no point in csrf tokening this. All they can do is add a user, that's it.
 @app.route('/register', methods=['GET','POST'])         # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
 def register():
-    session['where'] = app.config.get('WHERE')
-    if request.method == 'GET':
-        return render_template('register.jinja')
     if request.method == 'POST':
-        username = request.form['username']
-        password1 = request.form['password1']
-        password2 = request.form['password2']
-        email = request.form['email']
-        if password1 != password2:
-            # return '''<script> alert('passwords don't match')</script>'''
-            return render_template('error.jinja', message="passwords don't match")
-        elif len(username) < 3:
-            return render_template('error.jinja', message='username should be over 3 characters')
-        elif username == 'admin':
-            return render_template('error.jinja', message='username taken')
-        elif len(password1) < 8:
-            return render_template('error.jinja', message='password has to be at least 8 characters')
-        else:
-            sql = text('SELECT * from users WHERE username=:username')
-            result = db.session.execute(sql, {'username':username})
-            username_already_exists = result.fetchone()
-            #print('username_already_exists:', username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
-            if username_already_exists:
-                return render_template('error.jinja', message='username is already taken')
-            
-            hash_value = generate_password_hash(password1)                                                                                       # redundant else BUT I like clarity
-            sql = text('INSERT INTO users (username, password, email, is_admin) VALUES (:username, :password, :email, FALSE)')        # 'FALSE': not an admin account
-            result = db.session.execute(sql, {'username':username, 'password':hash_value, 'email':email})
-            db.session.commit() # remember to commit!
-            return render_template('/registration-successful.jinja')
+        session['where'] = app.config.get('WHERE')
+        if request.method == 'GET':
+            return render_template('register.jinja')
+        if request.method == 'POST':
+            username = request.form['username']
+            password1 = request.form['password1']
+            password2 = request.form['password2']
+            email = request.form['email']
+            if password1 != password2:
+                # return '''<script> alert('passwords don't match')</script>'''
+                return render_template('error.jinja', message="passwords don't match")
+            elif len(username) < 3:
+                return render_template('error.jinja', message='username should be over 3 characters')
+            elif username == 'admin':
+                return render_template('error.jinja', message='username taken')
+            elif len(password1) < 8:
+                return render_template('error.jinja', message='password has to be at least 8 characters')
+            else:
+                sql = text('SELECT * from users WHERE username=:username')
+                result = db.session.execute(sql, {'username':username})
+                username_already_exists = result.fetchone()
+                #print('username_already_exists:', username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
+                if username_already_exists:
+                    return render_template('error.jinja', message='username is already taken')
+                
+                hash_value = generate_password_hash(password1)                                                                                       # redundant else BUT I like clarity
+                sql = text('INSERT INTO users (username, password, email, is_admin) VALUES (:username, :password, :email, FALSE)')        # 'FALSE': not an admin account
+                result = db.session.execute(sql, {'username':username, 'password':hash_value, 'email':email})
+                db.session.commit() # remember to commit!
+                return render_template('/registration-successful.jinja')
+    elif request.method == 'GET':
+        sql = text('SELECT username FROM users;')
+        result = db.session.execute(sql)
+        tuplelist = result.fetchall() # returns a god-awful ' [('first_username_here',), ('second',), ('third',)]' so a list of tuples with one member per tuple. Disgusting.
+        usernames = [username[0] for username in tuplelist]
+        print("\n usernames:", usernames)
+        return render_template('register.jinja', usernames = usernames)

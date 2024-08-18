@@ -3,8 +3,9 @@
 {% block content %}
 
 <form action="/register" method="POST" onsubmit="return check(this)">
+    <b><p id="msg" style="color:rgb(0, 255, 0); min-height:20px"></p></b> <!-- min-height will keep a space reserved for the message always, even if empty -->
     <p> username
-    <input type="text" name="username" > </p>
+    <input type="text" name="username" oninput="isItTaken(event)"> </p>
     
     <p> password
     <input type="password" name="password1"> </p>
@@ -21,6 +22,23 @@
 </form>
 
 <script>
+    const msg = document.querySelector('#msg')
+    const usernames = [... {{ usernames | tojson }}, 'admin'] // NB! This will be an array, since it's directly from a python list. Misleading, yes... and: I converted the list of tuples of one to just a list first, in 'routes.py'. Otherwise it would've been the same hassle here! I'm using array spread [..., item-to-append-here]
+    
+    const isItTaken = event => {
+        const candidateName = event.currentTarget.value
+        for(const username of usernames) {  // can't use 'break' in .forEach loop, lol
+            if (username === candidateName) {
+                msg.textContent = `username "${candidateName}" is taken`
+                msg.style.color = 'rgb(255, 179, 0)'
+                break
+            } else {
+                msg.textContent = `username available`
+                msg.style.color = 'green'
+            }
+        }
+    }
+
     const check = form => {
         if (form.username.value.length < 3) {
             alert("Username should be at least 3 characters");
