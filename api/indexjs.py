@@ -3,6 +3,7 @@ from app import app
 from db import db, text
 from flask import session, jsonify, request
 from helpers import select_all
+from flask import render_template
 
 # session['csrf_token'] to 'index.js'
 @app.route('/api/sessioncsrf')         
@@ -159,10 +160,13 @@ def feedback():
     data = request.get_json()
     print('data:', data)
     comment = data['comment']
+    if len(comment) > 2000: # works, I tried
+        return jsonify({'status':'ERROR', 'message':'too long comment; shorten to under 2000'}), 403
+        
     username = session['username']
     csrf_token = request.headers.get('X-CSRF-Token')
     if session['csrf_token'] != csrf_token: # works; I checked by switching this from '!=' to '==', and it returns 403 forbidden  with the info 'Bad csrf' to the browser c:
-            return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
+        return jsonify({'status':'ERROR', 'message':'Bad CSRF'}), 403
     print('username (from session):', username)
     result = db.session.execute(text('SELECT * FROM users WHERE username = :username;'), {'username':username})
     row = result.fetchone()

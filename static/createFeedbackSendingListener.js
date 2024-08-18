@@ -14,6 +14,8 @@ const createFeedbackSendingListener = async (restaurantID, location, csrfToken) 
             alert("please provide feedback text and a rating before submitting")
         } else if (comment && !rating) {
             alert('please also provide a rating')
+        } else if (comment.length > 2000) {
+            alert('please shorten your comment to max 2000 characters')
         } else {
             const restaurant_name = location.name
             const body = {

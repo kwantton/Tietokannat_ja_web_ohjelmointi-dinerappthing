@@ -21,7 +21,6 @@ The admin can add new places on the map by querying based on a rough name and a 
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
-- enforce unique email in backend side!
 - small refactor and clean-up
 
 ## would-be-cool-if
@@ -52,6 +51,8 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] division into app.py, db.py, helpers.py, routes.py, and /api/admin.py, as well as /api/indexjs.py (for JS communication with psql backend)
 - [x] if a username exists already, notify at once (in JS) when someone tries to create a new account
 - [x] a max length for password (49) and username (25)
+- [x] enforce unique email in backend side!
+- [x] max length 2000 for comments, enforced on frontend AND backend side. Nice!
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.
