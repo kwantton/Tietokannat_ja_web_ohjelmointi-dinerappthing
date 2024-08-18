@@ -3,7 +3,7 @@
 {% block content %}
 
 <form action="/register" method="POST" onsubmit="return check(this)">
-    <b><p id="msg" style="color:rgb(0, 255, 0); min-height:20px"></p></b> <!-- min-height will keep a space reserved for the message always, even if empty -->
+    <b><p id="msg" style="min-height:20px"></p></b> <!-- min-height will keep a space reserved for the message always, even if empty -->
     <p> username
     <input type="text" name="username" oninput="isItTaken(event)"> </p>
     
@@ -40,11 +40,11 @@
     }
 
     const check = form => {
-        if (form.username.value.length < 3) {
-            alert("Username should be at least 3 characters");
+        if (form.username.value.length < 3 || form.username.value.length > 25) {
+            alert("Username should be 3-25 characters");
             return false;   // without this, it will submit the form. Even in that case, there's a separate error page with a similar message c:
-        } else if (form.password1.value.length < 8) {
-            alert("Password length has to be at least 8");
+        } else if (form.password1.value.length < 8 || form.password1.value.length > 49) {
+            alert("Password length has to be 8-49");
             return false;
         } else if (!form.password1.value.match(/[^a-z]/) || !form.password1.value.match(/[a-z]/)) { // if not a-z or not(not(a-z)), then reject. That is; we want both (1) lowercase letters, and (2) any non-lowercase symbols
             alert("Please enter a password with both (1) lowercase letters, and (2) at least uppercase letters, numbers or special characters")

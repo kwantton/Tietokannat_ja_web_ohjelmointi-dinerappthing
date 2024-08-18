@@ -3,6 +3,7 @@ from app import app, where, getenv
 from helpers import select_all
 from flask import render_template, jsonify, redirect, request, session
 from db import db, text, secrets, check_password_hash, generate_password_hash
+import re
 
 if where == 'local':
     app.config['WHERE'] = 'local' # 'app.config' is for global variables. I tried session['WHERE'] = 'local', but that doesn't work here!; you can only set session['x'] from an 'app.route(...)': "The session object in Flask is tied to the request/response cycle. It's used to store information across requests for individual users, but it ONLY EXISTS WHEN A REQUEST IS BEING PROCESSED. When you try to set session['where'] during the application startup (outside a request context), Flask raises the RuntimeError you're seeing." -ChatGPT
@@ -140,19 +141,31 @@ def register():
             if password1 != password2:
                 # return '''<script> alert('passwords don't match')</script>'''
                 return render_template('error.jinja', message="passwords don't match")
+            elif len(username) >= 26:
+                return render_template('error.jinja', message='username should be under 26 characters')
+            elif len(password1) >= 50:
+                return render_template('error.jinja', message='password should be under 50 characters')
             elif len(username) < 3:
                 return render_template('error.jinja', message='username should be over 3 characters')
             elif username == 'admin':
                 return render_template('error.jinja', message='username taken')
             elif len(password1) < 8:
                 return render_template('error.jinja', message='password has to be at least 8 characters')
+            elif not (re.search(r'[a-z]', password1) or re.search(r'[^a-z]', password1)):
+                return render_template('error.jinja', message='password has to include both (1) lowercase letters and (2) other characters (numbers, capital, etc)')
             else:
-                sql = text('SELECT * from users WHERE username=:username')
+                sql = text('SELECT * FROM users WHERE username=:username')
                 result = db.session.execute(sql, {'username':username})
                 username_already_exists = result.fetchone()
                 #print('username_already_exists:', username_already_exists) # ok. None if none was found; otherwise returns the user with that username. This check has to be done, as username is set as UNIQUE in db, and would cause error if left unchecked here
                 if username_already_exists:
                     return render_template('error.jinja', message='username is already taken')
+                
+                sql = text('SELECT * FROM users WHERE email=:email')
+                result = db.session.execute(sql, {'email':email})
+                email_already_exists = result.fetchone()
+                if email_already_exists:
+                    return render_template('error.jinja', message='this email address is already in use') # we don't want a million spam accounts per one user
                 
                 hash_value = generate_password_hash(password1)                                                                                       # redundant else BUT I like clarity
                 sql = text('INSERT INTO users (username, password, email, is_admin) VALUES (:username, :password, :email, FALSE)')        # 'FALSE': not an admin account
