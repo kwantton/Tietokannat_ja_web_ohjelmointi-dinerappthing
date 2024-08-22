@@ -5,16 +5,16 @@
 <form action="/register" method="POST" onsubmit="return check(this)">
     <b><p id="msg" style="min-height:20px"></p></b> <!-- min-height will keep a space reserved for the message always, even if empty -->
     <p> username
-    <input type="text" name="username" oninput="isItTaken(event)"> </p>
+    <input type="text" name="username" oninput="isUsernameTaken(event)"> </p>
     
     <p> password
-    <input type="password" name="password1"> </p>
+    <input type="password" name="password1" oninput="passwordsCheck(event)"> <b><custom-msg id="pw1msg"></custom-msg></b> </p>
     
-    <p> password again
-    <input type="password" name="password2"> </p>
+    <p id="pw2p"> password again
+    <input type="password" name="password2" oninput="passwordsCheck(event)"> <b><custom-msg id="pw2msg"></custom-msg></b> </p>
     
     <p> email
-    <input type="email" name="email"> </p>
+    <input type="email" name="email" oninput="checkEmail(event)"> <b><custom-msg id="email-msg"></custom-msg></b> </p>
 
     <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
 
@@ -25,18 +25,61 @@
     const msg = document.querySelector('#msg')
     const usernames = [... {{ usernames | tojson }}, 'admin'] // NB! This will be an array, since it's directly from a python list. Misleading, yes... and: I converted the list of tuples of one to just a list first, in 'routes.py'. Otherwise it would've been the same hassle here! I'm using array spread [..., item-to-append-here]
     
-    const isItTaken = event => {
+    const isUsernameTaken = event => {
         const candidateName = event.currentTarget.value
-        for(const username of usernames) {  // can't use 'break' in .forEach loop, lol
+        for(const username of usernames) {  // can't use 'break' in .forEach loop; that's why 'for(...)'
             if (username === candidateName) {
                 msg.textContent = `username "${candidateName}" is taken`
                 msg.style.color = 'rgb(255, 179, 0)'
                 break
+            } else if (candidateName.length < 3 || candidateName.length > 25) {
+                msg.textContent = 'Username should be 3-25 characters'
+                msg.style.color = 'rgb(255, 179, 0)'
             } else {
                 msg.textContent = `username available`
                 msg.style.color = 'green'
             }
         }
+    }
+
+    const passwordsCheck = event => {
+        const pw1msg = document.querySelector('#pw1msg')    // password 1 message = pw1msg
+        const pw2msg = document.querySelector('#pw2msg')
+        const pw1 = document.querySelector('input[name="password1"]').value
+        const pw2 = document.querySelector('input[name="password2"]').value
+        if(!pw1.match(/[a-z]/) || !pw1.match(/[^a-z]/)) {
+            pw1msg.textContent = `Please enter a password with both (1) lowercase letters, and (2) at least uppercase letters, numbers or special characters`
+            pw1msg.style.color = 'rgb(255, 179, 0)'
+        } else if (pw1.length < 8 || pw1.length > 49) {
+            pw1msg.style.color = 'rgb(255, 179, 0)'
+            pw1msg.textContent = `Password length should be 8-49 characters`
+        } else if (pw1 !== pw2) {
+            pw1msg.style.color = 'rgb(255, 179, 0)'
+            pw1msg.textContent = `Passwords don't match`
+        } else {
+            pw1msg.textContent = ''
+            pw1msg.style.color = 'green'
+        }
+    }
+
+    const emailValidator = email => {
+        if (email.match(/^[a-zA-Z0-9]+[a-zA-Z0-9!#$%&'*+-/=?^_`{|}~.]*@[a-zA-Z0-9\-\.]+\.[a-z]{2,}$/) && !email.match(/(\.\.)/)) { // NB! dot is '\.' in regex , because plain '.' means any character; hence it needs to be escaped using '\.'
+            return true     // email ok. // the email must start with letters/numbers, and can not have two consecutive dots ('..'), also must end with '.char1char2' or longer, etc. (https://en.wikipedia.org/wiki/Email_address)
+        }
+        return false        // email sucks
+    }
+
+    const checkEmail = event => {
+        const email = event.currentTarget.value
+        console.log("email:", email)
+        const emailMsg = document.querySelector('#email-msg')
+        if (!emailValidator(email)) { 
+            emailMsg.textContent = 'Please enter a valid email'  
+            emailMsg.style.color = 'rgb(255, 179, 0)'
+        } else {    
+            emailMsg.textContent = ''
+        }
+
     }
 
     const check = form => {
@@ -49,8 +92,8 @@
         } else if (!form.password1.value.match(/[^a-z]/) || !form.password1.value.match(/[a-z]/)) { // if not a-z or not(not(a-z)), then reject. That is; we want both (1) lowercase letters, and (2) any non-lowercase symbols
             alert("Please enter a password with both (1) lowercase letters, and (2) at least uppercase letters, numbers or special characters")
             return false;
-        } else if (form.email.value == '') {    // without this, it would pass if left empty! the 'type=email' only checks for the form of input, not if the field is empty!
-            alert("Please provide an email");
+        } else if (!emailValidator(form.email.value)) {    // without this, it would pass if left empty! the 'type=email' only checks for the form of input, not if the field is empty!
+            alert("Please provide a valid email");
             return false;
         } else if (form.password1.value === '' || form.password2.value === '') { 
             alert("Please provide password twice");

@@ -3,7 +3,6 @@ from app import app
 from db import db, text
 from flask import session, jsonify, request
 from helpers import select_all
-from flask import render_template
 
 # session['csrf_token'] to 'index.js'
 @app.route('/api/sessioncsrf')         
@@ -30,7 +29,7 @@ def get_restaurants_json():
     return jsonify(restaurants_list)
 
 # This provides both the ratings AND the comments per each 'restaurant_id', used in index.js
-# NB! I'm filtering out the restaurants where restaurant_visible = FALSE, BUT I'm not filtering out comments or ratings here; I'm doing that filtering in the index.js JS
+# NB! I'm filtering out the restaurants where restaurant_visible = FALSE, BUT I'm not filtering out comments or ratings here; I'm doing that filtering in 'index.js' ONLY WHEN NEEDED (not always)
 @app.route('/api/ratings/<int:restaurant_id>')      
 def get_ratings_and_comments_by_restaurant_id(restaurant_id):
     only_visible_ratings = request.args.get('only_visible_ratings', default='0') == '1' # bool: True or False? This is the '?only_visible_ratings=1' or '...=0' from the request. Awesome!
@@ -177,9 +176,9 @@ def feedback():
     sql = text('INSERT INTO comments (user_id, restaurant_id, comment, created_at, visible) VALUES (:user_id, :restaurant_id, :comment, NOW(), TRUE);')
     result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment':comment})
     db.session.commit()
-    result = db.session.execute(text('SELECT COUNT (*) FROM comments;')) # the latest one that was just added
+    result = db.session.execute(text('SELECT COUNT (*) FROM comments;')) # find the latest one that was just added. Note: I'm never deleting comments; just rendering visible=False if 'removing', and that's why counting works. Note, I can't choose based on restaurant_id + comment, as even these two can be non-unique together. There is a problem though: what if between the commit (previous line) and this one, another comment was saved? Then the id would be wrong. I don't know if that is possible.
     row = result.fetchone()
-    comment_id = row.count # atomatically column 'count' as explained in the course material
+    comment_id = row.count # automatically column 'count' as explained in the course material
     if 'rating' in data:    # if a rating was provided, put it into the db
         sql = text('INSERT INTO ratings (user_id, restaurant_id, comment_id, rating, created_at, rating_visible) VALUES (:user_id, :restaurant_id, :comment_id, :rating, NOW(), TRUE);')
         result = db.session.execute(sql, {'user_id':user_id, 'restaurant_id':data['restaurant_id'], 'comment_id':comment_id, 'rating':data['rating']})           

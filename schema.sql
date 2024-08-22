@@ -6,7 +6,7 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL
 );
 
--- please note: this user is created because a user_id is needed for other tables. Since this password is not hashed, it cannot be input as-is when you log in; you won't get in, as this password will be interpreted as a hashed value. Yes, you could decrypt this one, but it's not very useful to anyone since this is not an admin account c: also your username would then be 'dummy' and easily recognizable in that case ;)
+-- please note: this user is created because a 'user_id' is needed for many other tables. Since this password is not hashed, it cannot be input as-is when you log in; you won't get in, as this password will be interpreted as a hashed value. Yes, you could decrypt this one, but it's not very useful to anyone since this is not an admin account c: also your username would then be 'dummy' and easily recognizable in that case ;)
 INSERT INTO users (username, password, is_admin, email) VALUES ('dummy','doesnt_work_not_hashed', FALSE, 'testi@esimerkki.fi');
 
 CREATE TABLE restaurants (
@@ -17,7 +17,7 @@ CREATE TABLE restaurants (
 );
 
 
--- BY DEFAULT, I'm showing (restaurant_visible=TRUE) only 1 diner, 1 bar and 1 cafe. This is to prevent fetching 20 restaurants through the API by default; I don't want my free Cloud credits to run out before I can even deploy the app online, lol
+-- BY DEFAULT, I'm showing (restaurant_visible=TRUE) only 1 diner, 1 bar and 1 cafe. This is to prevent fetching 20 restaurants through the API by default; I don't want my free Cloud credits to run out before I can even deploy the app online
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Krung Thep Thai Bistro Arabia', 'Hämeentie 153, 00560 Helsinki', TRUE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Thai Ravintola Meelom Oy', 'Koskelantie 56, 00610 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Egyptiläinen ravintola El Karim', 'Koskelantie 52, 00610 Helsinki', FALSE);
@@ -39,7 +39,7 @@ INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Beer restaurant Jano / Olutravintola Jano', 'Mäkitorpantie 11 00620 Helsinki', FALSE);
 INSERT INTO restaurants (restaurant_name, address, restaurant_visible) VALUES ('Cafe Amore', 'Oulunkyläntie 7 00600 Helsinki', FALSE);
 
--- this will include descriptions fetched from Google Places API, AND stuff that admin can add
+-- this table includes descriptions fetched from Google Places API, AND custom categories that admin can add and remove on the /admin page
 CREATE TABLE restaurant_categories (
     id SERIAL PRIMARY KEY,
     restaurant_id INTEGER NOT NULL REFERENCES restaurants (id),

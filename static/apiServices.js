@@ -59,7 +59,7 @@ const toggleVisibilityOf = (id, target, token, baseUrl) => {
     put(`${baseUrl}/api/toggle-visibility-of/${target}/${id}`, token)
     .then(data => {
         console.log("data after updating id:", data)
-        window.location.reload()        // I'm refreshing the page with my superpowers! An alternative would be to manually add the new information as a new HTML element... and then also add aaaall the buttons and whatnot to that according to the situation, but that would be too much work here, require a lotta functions etc. This is not React (unfortunately)
+        window.location.reload()        // I'm refreshing the page. An alternative would be to manually add the new information as a new HTML element... and then also add aaaall the buttons and whatnot to that according to the situation, but that would be too much work here, require a lotta functions etc. This is not React (unfortunately)
     })
 }
 
@@ -70,4 +70,4 @@ const addVisibilityTogglerListener = (elementQuery, token, baseUrl) => {
         })
     })
 }
-export default { getAll, post, put, remove, addVisibilityTogglerListener } // exports a single JSON like this (like a Python map!), so each function is usable as 'x.get' and 'x.post' in the destination after you import this JSON as 'x'. Taught in FullStack course.
+export default { getAll, post, put, remove, addVisibilityTogglerListener } // exports a single JSON like this (like a Python map), so each function is usable as 'x.get' and 'x.post' in the destination after you import this JSON as 'x'. Taught in FullStack course.

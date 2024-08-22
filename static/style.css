@@ -24,6 +24,10 @@
   font-family:Arial, Helvetica, sans-serif;
  }
 
+ custom-msg {
+  font-family:inherit
+ }
+
  ul {
   font-family:Arial, Helvetica, sans-serif;
  }

@@ -71,7 +71,7 @@ async function initMap() {
             // let's filter out those descriptions that say 'point_of_interest' (every damn place..), or 'establishment' (every goddamn place..). Btw. .filter() produces an array from an array, i.e., a '[item1, item2...]'
             const categoriesFromDb = await apiServices.getAll(`/api/get-categories/${restaurantID}`)
             let sensibleDescriptions = placeDetails.types.filter(description => !['point_of_interest','establishment'].includes(description)) // used in labelElement that's created below
-            const descriptionsLower = sensibleDescriptions.map(d => d.toLowerCase()) // copy for testing
+            const descriptionsLower = sensibleDescriptions.map(d => d.toLowerCase())
             categoriesFromDb.forEach(categoryJSON => {
               if (!descriptionsLower.includes(categoryJSON.category.toLowerCase())) {
                 sensibleDescriptions.push(categoryJSON.category)
@@ -154,7 +154,7 @@ async function initMap() {
                     createStarRatingListener(restaurantID)                          // creates a onClick listener for each rating section star, coloring them orange if rated, removing color if rating is lower, etc. 
                     createFeedbackSendingListener(restaurantID, location, csrfToken)
                     .then(/* placeholder */)                                        // this function 'createFeedbackSendingListener' is asynchronous, but I'm not inside an 'async' function, so I can't use 'await' here -> '.then' is needed instead IF I do something after this function. A reminder - I'm currently not doing anything after the function, but in case I will be, I'm leaving 'then()' as a reminder
-                  },0)                                                              // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the infowindow.open (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this: ChatGPT! With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended!
+                  },0)                                                              // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the 'infowindow.open' above (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this timeOut: ChatGPT. With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended.
                 }
               }
             })

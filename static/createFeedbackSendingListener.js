@@ -27,9 +27,9 @@ const createFeedbackSendingListener = async (restaurantID, location, csrfToken) 
             } else {
                 //pass
             }
-            document.querySelector(`#feedback-section-${restaurantID}`).style.display = 'none'
-            document.querySelector(`#feedback-sent-${restaurantID}`).style.display = 'inline-block'
-            document.querySelector(`#feedback-text-${restaurantID}`).value = '' // reset the text field. It's hidden anyway, thus doesn't really matter 
+            document.querySelector(`#feedback-section-${restaurantID}`).style.display = 'none'      // we've sent the feedback, so let's hide the feedback sending section,
+            document.querySelector(`#feedback-sent-${restaurantID}`).style.display = 'inline-block' // and let's show the 'feedback sent!' now
+            document.querySelector(`#feedback-text-${restaurantID}`).value = ''                     // reset the text field. It's hidden anyway, thus doesn't really matter. This could be removed, as I just made the feedback section invisible already.
             
             const [response, data] = await apiServices.post('/api/feedback/', body, csrfToken)
             console.log(data)
