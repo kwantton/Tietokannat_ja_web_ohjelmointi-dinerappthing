@@ -91,7 +91,7 @@ button {
   /* 
    * Optional: Makes the sample page fill the window. 
    */
-  html,
+  html, /* */
   body {
     height: 100%;
     margin: 0;
@@ -138,10 +138,10 @@ button {
 
 .infobox { /* for error messages in password etc. validation */
   display: none;
-  background-color: #7a11d23d;
+  background-color: #fa08080f;
   color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: .5em;
+  border: 2px solid #7fbdff;
+  border-radius: .2em;
   position: absolute; /* absolute; the next elements don't care about its location; doesn't affect the following elements */
   /* z-index: 100; */
   box-shadow: 0 0 5px rgba(0,0,0,0.5);
