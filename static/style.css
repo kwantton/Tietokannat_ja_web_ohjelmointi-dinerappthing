@@ -138,8 +138,8 @@ button {
 
 .infobox { /* for error messages in password etc. validation */
   display: none;
-  background-color: #fa08080f;
-  color: #721c24;
+  background-color:#396fc33d;
+  color: #000000a3;
   border: 2px solid #7fbdff;
   border-radius: .2em;
   position: absolute; /* absolute; the next elements don't care about its location; doesn't affect the following elements */
