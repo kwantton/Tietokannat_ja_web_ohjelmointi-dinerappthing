@@ -16,7 +16,6 @@
     <div class="input-container">
         <p> password <br>
             <input type="password" name="password1" oninput="passwordsCheck(event)"> 
-            <b><custom-msg id="pw1msg" style="color:rgb(255, 179, 0)"></custom-msg></b> 
         </p>
         <div id="pw1-errors-div" class="infobox">
             <ul id="pw1-errors-ul"></ul>
@@ -25,12 +24,11 @@
     
     <p id="pw2p"> password again <br>
     <input type="password" name="password2" oninput="passwordsCheck(event)"> 
-    <b><custom-msg id="pw2msg" style="color:rgb(255, 179, 0)"></custom-msg></b> </p>
     
     <div class="input-container">
         <p> email <br>
             <input type="email" name="email" oninput="checkEmail(event)"> 
-            <b><custom-msg id="email-msg"></custom-msg></b> 
+            <b><custom-msg id="email-msg"></custom-msg></b>
         </p>
         <div id="email-errors-div" class="infobox">
             <ul id="email-errors-ul"></ul>
@@ -42,10 +40,8 @@
 </form>
 
 <script>
-    
     const showErrorsFor = (errorList, target) => { // if there are multiple issues, then list them all separated by ';'
         const div = document.querySelector(`#${target}-div`)
-        console.log("div:", div)
         if(errorList.length !== 0) {
             const ul = document.querySelector(`#${target}-ul`)
             ul.innerHTML = '' // reset the old content, as we now have an updated list of errors
@@ -54,10 +50,9 @@
                 li.textContent = error
                 ul.appendChild(li)
             })
-            
             div.style.display = 'block'
         } else {
-            div.style.display = 'none' // hide it
+            div.style.display = 'none' // hide the error div in question, if there are no errors to show
         }
     }
     
@@ -115,7 +110,7 @@
 
     }
 
-    const checkForm = form => {
+    const checkForm = form => { // without this, the form would be sent to the backend even if not valid (note: subsequently to be turned down by the backend, though, so there would be no real harm in that case either.)
         if (form.username.value.length < 3 || form.username.value.length > 25) {
             alert("Username should be 3-25 characters");
             return false;   // without this, it will submit the form. Even in that case, there's a separate error page with a similar message c:

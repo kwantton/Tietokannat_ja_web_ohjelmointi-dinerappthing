@@ -134,13 +134,14 @@ button {
 
 .infobox { /* for error messages in password etc. validation */
   display: none;
-  background-color: #f8d7da;
+  background-color: #7a11d23d;
   color: #721c24;
   border: 1px solid #f5c6cb;
-  padding: lef10px;
+  border-radius: .5em;
   position: absolute; /* absolute; the next elements don't care about its location; doesn't affect the following elements */
   /* z-index: 100; */
-  width: 200px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  width: 250px;
   top:0; /* relative to the PREVIOUS element, in this case, the password input field*/
   left: calc(100% + 50px); /*relative to the PREVIOUS element, the pw input, its whole width + 10 px c:*/
 }
