@@ -16,14 +16,12 @@ that only happens when using adblocker.
 A user can log in, view restaurants (view: Google Maps API) based on info in a PostgreSQL database, log out, read reviews by other users and give their own review.
 A selection of restaurants (and a couple of cafes and bars) is initialized as a PostgreSQL database, from which markers are placed
 on the Google map based on Places API query that includes the name and address given in the PostgreSQL database.
-Upon clicking each marker, you can see whether the place is currently open or closed, what its opening hours are, what categories (café, restaurant, bar etc) of services it has, the current sql-db-based ratings and comments (those that have 'visible'=TRUE in the db), and the user can leave their own rating and comment. If the user is not logged in, they will see a text with a link to login.
+Upon clicking each marker, you can see whether the place is currently open or closed, what its opening hours are, what categories (café, restaurant, bar etc) of services it has, the current sql-db-based ratings and comments (those that have `visible=TRUE` in the db), and the user can leave their own rating and comment. If the user is not logged in, they will see a text with a link to login.
 The admin can add new places on the map by querying based on a rough name and a rough address, hide existing places, as well as add and remove descriptions ("categories") of the places. The admin can delete reviews by rendering them invisible to others (we don't want to permanently delete the evidence c;). The admin can also delete comments by rendering them invisible. Deleting comments and reviews (non-permanently) can be done independently of each other. Hidden (non-permanently 'removed') ratings are ignored in calculation of grade average for a place.
 The user can search (hide/show) the restaurants on the map, and on the list below, based on the description or the name of the place. After the abovementioned adding of new places based on an approximate name and an approximate address, the Places API will then search the official name and address and other info to be shown on map (these will be updated to the db only if the admin is logged in, however). The rough name and address in the SQL db are also updated to their official counterparts in this process. Only the official name and address are then shown to the users.
 
 ## TO-DO:
 - more styling
-- a more practical list of restaurants, not just on the map
-- after login attempt: 'cookie "session" does not have a proper "SameSite" attribute value...'
 - after successful login: 'Layout was forced before the page was fully loaded. If stylesheets are not yet loaded this may cause a flash of unstyled content.'
 - small refactor and clean-up
 
@@ -79,8 +77,8 @@ See schema.sql
 - run 'pip install requirements.txt' to install all the dependencies
 - very important: if running locally, set in .env the 'WHERE' as 'local'. See more in section (1) env vars, below, which lists all the .env contents.
 - schema.sql has the list of PostgreSQL commands to be run to CREATE the necessary tables for the app:
-    * 'psql < schema.sql' to execute the commands. In my case, I have to copy the schema.sql to my root/var/lib/postgresql, then 'su - \[userhere\]' -> input password for that user -> 'psql < schema.sql', every time, ((( see next line )))
-(((- I personally installed PostgreSQL in ubuntu 22 by 'apt install postgresql', then 'sudo passwd \[userhere\]' -> create password for that user. Every time I want to access PostgreSQL, 'su - \[userhere\]' -> input password -> 'psql', which by default puts me in root/var/lib/\[userhere\])))
+    * `psql < schema.sql` to execute the commands. In my case, I have to copy the schema.sql to my root/var/lib/postgresql, then 'su - \[userhere\]' -> input password for that user -> `psql < schema.sql`, every time, ((( see next line )))
+(((- I personally installed PostgreSQL in ubuntu 22 by 'apt install postgresql', then 'sudo passwd \[userhere\]' -> create password for that user. Every time I want to access PostgreSQL, `su - \[userhere\]` -> input password -> 'psql', which by default puts me in root/var/lib/\[userhere\])))
 - on this coure, PostgreSQL is used:
     * in .env, regarding PostgreSQL:
         * DATABASE_URL=postgresql:///\[your_postgresql_user_here\]
@@ -99,7 +97,7 @@ See schema.sql
         - Places API also in your Google Cloud settings,
 you should be able to use the code as-is. 
 As of 16.8.2024:
-"You are not billed during your Free Trial \[that's 90 days\]. When the Free Trial ends, all resources you created during the trial are stopped and you will not be charged, unless you upgrade to a paid Cloud Billing account." The free trial seems to be 281 € / month, for the duration of 90 days (3 months), after which you'd have to pay for the following usage.
+"You are not billed during your Free Trial \[90 days\]. When the Free Trial ends, all resources you created during the trial are stopped and you will not be charged, unless you upgrade to a paid Cloud Billing account." The free trial seems to be 281 € / month, for the duration of 90 days (3 months), after which you'd have to pay for the following usage.
 
 ### (2) Google Maps API
 First, see the GOOGLE_API_KEY above.
@@ -118,7 +116,7 @@ Before connecting the app (dinerapp) to the db-app, (1) connect to the db-app (2
 
 #### requirements.txt contents (i.e., dependencies)
 - after git cloning onto your computer, run 'pip install requirements.txt' to install all the dependencies
-- (((whenever a new 'pip install \[x\]' is done, run pip freeze > requirements.txt to update this dependency list to include \[x\] also)))
+- (((whenever a new `pip install x` is done, run `pip freeze > requirements.txt` to update this dependency list to include `x` also)))
 - list of requirements:
 * Flask: for web dev with Python: Python micro web dev environment
 * Jinja2: templating engine for writing python. For example Django uses this also.
