@@ -93,8 +93,10 @@ def restaurants():
 def login():
     session['csrf_token'] = secrets.token_hex(16)
     session['where'] = app.config.get('WHERE')
-    username = request.form['username']
-    password = request.form['password']
+    data = request.get_json()
+    
+    username = data.get('username')
+    password = data.get('password')
 
     sql = text('SELECT username, password FROM users WHERE username=:username')     # you CAN'T check the password here unless you first encrypt the password using werkzeug.security.generate_password_hash(pw_here)
     result = db.session.execute(sql, {'username':username, 'password':password})    # HASHED pw into db
@@ -103,21 +105,23 @@ def login():
     if username == 'admin':
         if password == admin_password:                                              # admin_password is stored as env var (as-is), hence safe
             session['username'] = username
-            return redirect('/')
+            return jsonify({'status':'password ok'}), 200
         else:
-            return render_template('error.jinja', message='username or password is wrong')
+            return jsonify({'status':'wrong password'}), 401                        # 401 = unauthorized. NB! This will also be shown in the console, of course.
     else:
         try:
-            user = result.fetchone()                                                # the row has two values: u_name and p_word.
+            user = result.fetchone()                                                # the row has two values: username and password.
+            if not user:                                                            # user = 'None' if the username wasn't found in psql
+                return jsonify({'status':'username does not exist'})
             if check_password_hash(user.password, password):
                 session['username'] = username
-                return redirect('/')
+                return jsonify({'status':'password ok'}), 200
             else:
-                return render_template('error.jinja', message='username or password is wrong')    
+                return jsonify({'status':'wrong password'}), 401                    # 401 = unauthorized
         except:
-            print("couldn't get real_username, hashed_pw, returning error message:")
-            return render_template('error.jinja', message='username or password is wrong')
-        
+            print("something went wrong in username/password checking returning error message:")
+            return jsonify({'status':'error', 'message':'something unexpected went wrong when trying to validate username and password'})
+
 @app.route('/logout')
 def logout():
     if session['username']:                                                         # the user may try this url without being logged in, and that's what this check is for
@@ -126,7 +130,7 @@ def logout():
         del session['csrf_token']
     return redirect('/')
 
-# btw there's no point in csrf tokening this. All they can do is add a user, that's it.
+# btw there's no point in csrf tokening this. All they can do is add a user using a non-occupied email, that's it.
 @app.route('/register', methods=['GET','POST'])                                     # 'GET' is there by default, but if you just write 'POST', you'll override GET. Hence, both need to be listed as the same url is used for both
 def register():
     if request.method == 'POST':

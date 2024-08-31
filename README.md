@@ -3,8 +3,6 @@
 ### for online testing!
 Now the application can be used at https://dinerappthing.fly.dev/.
 
-For peer reviews: admin password is 'admin1234', username 'admin'.
-
 If you want to get the admin password for testing, contact me (antton.kasslin@hotmail.com). This way you can add restaurants (and other places!), toggle visibility of restaurants to users, add new categories, hide and delete old categories, and toggle visibility of each rating and comment separately.
 
 Currently, I've only added a few places on the map to conserve my limited free Google Places API.  It's possible to add more, and not just restaurants, in the admin page (/admin) but only if you have the admin password, of course.
@@ -25,6 +23,8 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 ## TO-DO:
 - more styling
 - a more practical list of restaurants, not just on the map
+- after login attempt: 'cookie "session" does not have a proper "SameSite" attribute value...'
+- after successful login: 'Layout was forced before the page was fully loaded. If stylesheets are not yet loaded this may cause a flash of unstyled content.'
 - small refactor and clean-up
 
 ## would-be-cool-if
@@ -59,6 +59,7 @@ The user can search (hide/show) the restaurants on the map, and on the list belo
 - [x] max length 2000 for comments, enforced on frontend AND backend side. Nice!
 - [x] '/register': onInput frontend checks for username length, password matches, password length, password quality, and associated error messages
 - [x] '/register': onInput email validity frontend check, same rules also for preventing form sending
+- [x] '/' when trying to log in, incorrect username/password is reported to and handled in the frontend (browser, shown to user) instead of being redirected to '/error' with a similar message
 
 ## Maybe some day..
 - it would be awesome to save ALL info to the db after initial querying of the API so that the Places API wouldn't have to be used after that -> less use of the API (it's not free to use after initial trial), AND faster if your db lives closer to you than Google's servers.

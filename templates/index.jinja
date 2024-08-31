@@ -19,7 +19,7 @@
 
 {% else %}
     <p> Login </p>
-    <form action="/login" method="POST" onsubmit="return check(this)">
+    <form onsubmit="check(this); return false">
         <p> username: <br>
             <input type="text" name="username"> </p>
         <p> password: <br>
@@ -27,16 +27,27 @@
         {# <input type="submit" value="log in"> <!-- this works as a button, but since I'd like to use the css for <button> instead, I'm using button below --> #}
         <button> log in </button>
     </form>
+
     <script>
-        const check = form => {
+        const check = async form => {
             const username = form.username.value
             const password = form.password.value
             if(!username) {
-                alert("please enter a username")
-                return false
+                alert('please enter a username')
             } else if (!password) {
-                alert("please enter a password")
-                return false
+                alert('please enter a password')
+            } else {
+                const response = await fetch('/login', {
+                    method:'POST',
+                    headers:{ 'Content-Type':'application/json' },
+                    body: JSON.stringify({ username, password })
+                })
+                const data = await response.json()
+                if (data.status === 'wrong password' || data.status === 'username does not exist') {
+                    alert('username or password is wrong')
+                } else if (data.status === 'password ok') {
+                    window.location.reload() // refresh the page
+                }
             }
         }
     </script>
