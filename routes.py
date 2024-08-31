@@ -107,7 +107,7 @@ def login():
             session['username'] = username
             return jsonify({'status':'password ok'}), 200
         else:
-            return jsonify({'status':'wrong password'}), 401                        # 401 = unauthorized. NB! This will also be shown in the console, of course.
+            return jsonify({'status':'wrong password'}), 401                        # 401 = unauthorized. NB! This will also be shown in the console.
     else:
         try:
             user = result.fetchone()                                                # the row has two values: username and password.
