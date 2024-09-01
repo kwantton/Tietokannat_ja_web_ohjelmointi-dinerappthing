@@ -26,6 +26,9 @@ let map = 'morjens'
 // lngLatJSON shall have all the longtitudes and latitudes: {restaurant_id : {lng, lat}}, and this will be exported for use in 'map.jinja'. Why const? Because it's properties (each key-value pair) can be set later even though it's a 'constant'. Effectively, 'const' here is saying, 'this variable should always remain a JSON'
 const lngLatJSON = {}
 
+// for exporting to 'map.jinja'; { restaurant_id : [description 1, description 2, ...]}
+const exportedDescriptions = {}
+
 async function initMap() {
   // since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 
@@ -85,6 +88,7 @@ async function initMap() {
 
             let descriptionsHTML = sensibleDescriptions.map(description => `<li>${safeHTML(description)}</li>`).join('') // .join('') converts the array (from map(), which also produces an array) into a string
             
+            
             // this container element is needed so I can place the label for the marker right below the marker itself regardless of the label size. Also, for the search box; since I wanna hide both the marker and the label, using this single container per marker+label, I can hide/show both at the same time. See See 'style.css'.
             const markerContainer = createMarkerContainer(place, placeDetails, sensibleDescriptions)
             
@@ -95,8 +99,9 @@ async function initMap() {
               title: placeDetails.name,
               content: markerContainer
             }) 
-            lngLatJSON[restaurantID] = { lat : placeDetails.geometry.location.lat(), lng: placeDetails.geometry.location.lng() }
             // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements.
+            lngLatJSON[restaurantID] = { lat : placeDetails.geometry.location.lat(), lng: placeDetails.geometry.location.lng() }
+            exportedDescriptions[restaurantID] = sensibleDescriptions            
 
             const openingHours = placeDetails.opening_hours?.weekday_text || []   // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
             const openingHoursHTML = openingHours.map(hours_for_the_day => `<li>${hours_for_the_day}</li>`).join('') // join each member of the array [`<li>hours1</li>`, `<li>hours2</li>`...] for each day as a string, to be evetually used as a whole array of <li> HTML elements; this array of <li>hours_x</li>'s is placed inside an <ul> to create an array of opening hours per each weekday for each restaurant c:
@@ -176,5 +181,5 @@ async function initMap() {
 }
 
 await initMap()           // initMap() is 'async', so it returns a promise; we need to resolve that promise (=> in effect, do ALL the stuff inside initMap()) before exporting 'map' and 'lngLatJSON' because initMap() modifies the variables 'map' and 'lngLatJSON' which I'm exporting below. If you don't await for initMap(), the the below exported 'map' will have value 'morjens' instead of the actual map that I want to export because 'map' was initialized as 'morjens' at the top of this 'index.js' (let map = 'morjens' was done at ~row 24)
-export default { map, lngLatJSON };
+export default { map, lngLatJSON, exportedDescriptions };
 // solution #2 would be; export initMap() without awaiting first, then in the receiving side ('map.jinja') resolve it THERE instead c: (so, exporting a Promise instead of the resolved product)

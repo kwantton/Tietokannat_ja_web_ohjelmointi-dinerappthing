@@ -9,7 +9,7 @@
 {% block content %}
 
     <div id="map-search-name"> <!-- for searching restaurants above in the map -->
-        <h3> name search golden places </h3>
+        <h3> filter by name </h3>
         <input name="search-query" oninput="mapSearch(event)" placeholder="search the map">        <!-- oninput = every time the user types; onchange is activated every time you push enter -->
         <script>
             const mapSearch = event => {
@@ -35,7 +35,7 @@
     </div>
 
     <div id="map-search-descriptions"> <!-- for searching restaurants above in the map -->
-        <h3> description search golden places </h3>
+        <h3> filter by descriptions </h3>
         <input name="search-query" oninput="descriptionsSearch(event)" placeholder="search the map">        <!-- oninput = every time the user types -->
         <script>
             const descriptionsSearch = event => {
@@ -106,14 +106,13 @@
                 import indexJS from '../static/index.js'            // I'm trying to recenter it
                 const map = indexJS.map
                 const lngLatJSON = indexJS.lngLatJSON
-                console.log('map:', map)                    // map: Object { gm_bindings_: {…}, Fg: {…}, __gm: {…}, gm_accessors_: {…}, mapCapabilities: {…}, renderingType: "RASTER", zoom: 15, center: {…}, mapId: "DINER_MAP_1", mapTypeId: "roadmap", … }
-                console.log('map.center:', map.center)      // turned out not to be useful: map.center: Object { lat: lat(), lng: lng() } // so it gives two functions, not anything I can change!
-                
+                const descriptions = indexJS.exportedDescriptions
+                console.log('descriptions:', descriptions)          // { restaurant_id : [description1, description2, ...]}
+                console.log('Object keys(descriptions):', Object.keys(descriptions));                
                 console.log('lngLatJSON:', lngLatJSON)
-
-                if(window.confirm("wanna recenter? c:")) {
-                    map.setCenter({ lat:60.328333, lng:25.089472 })
-                }
+                //console.log('map:', map)                          // map: Object { gm_bindings_: {…}, Fg: {…}, __gm: {…}, gm_accessors_: {…}, mapCapabilities: {…}, renderingType: "RASTER", zoom: 15, center: {…}, mapId: "DINER_MAP_1", mapTypeId: "roadmap", … }
+                //console.log('map.center:', map.center)            // turned out not to be useful: map.center: Object { lat: lat(), lng: lng() } // so it gives two functions, not anything I can change!
+                //console.log('lngLatJSON:', lngLatJSON)
 
                 const placeId_placeInfo = []                        // array of JSONs: [ {id: {...}}, ... ]. Each JSON shall have properties 'id', 'name', 'average', 'nRatings' and 'average' (nRatings = number of ratings)
 
@@ -155,6 +154,7 @@
                     const restaurantUlElement   =   document.createElement('ul')
                     const averageElement        =       document.createElement('li')
                     const addressElement        =       document.createElement('li')
+                    const descriptionsUl        =       document.createElement('ul')
 
                     averageElement.classList.add('average-element') // for the search function way above
                     addressElement.classList.add('address-element')
@@ -167,11 +167,26 @@
                         : `average ${Math.round(restaurantJSON.average*100)/100} (${restaurantJSON.nRatings} rating${restaurantJSON.nRatings === 1 ? '' : 's'})`
                     addressElement.textContent = restaurantJSON.address
 
+                    const d = descriptions[restaurantJSON.restaurant_id]
+                    console.log("restaurantJSON.restaurant_id:", restaurantJSON.restaurant_id)
+                    console.log("descriptions[4]:", descriptions[4])
+                    console.log("descriptions['4']:", descriptions['4'])
+                    //console.log("descriptions.4:", descriptions.4)
+                    console.log("d:", d)
+
+                    // COMMENTOUT
+                    {# d.forEach(description => {
+                        const li = document.createElement('li')
+                        li.textContent = description
+                        descriptionsUl.appendChild(li)
+                    }) #}
+
                     restaurantDivElement.appendChild(nameElement)
                     restaurantDivElement.appendChild(restaurantUlElement)
                     restaurantDivElement.appendChild(mapFocusButton)
                     restaurantUlElement.appendChild(averageElement)
                     restaurantUlElement.appendChild(addressElement)
+                    restaurantUlElement.appendChild(descriptionsUl)
 
                     // no XSS risk here, as everything is "textContent" instead of innerHTML. ALSO; I could use static/safeHTML.js here, but I already wrote all this code before coming up with the safeHTML function, so...
                     infoHTML.appendChild(restaurantDivElement)
