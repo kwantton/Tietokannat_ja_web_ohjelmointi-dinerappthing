@@ -75,19 +75,19 @@
 
                 if (newCategory === '') {
                     alert("Come on, give me something to work with, will ya?")
-                    return false;
+                    return false
                 } else {
                     const [response, data] = await apiServices.post(`/add-category/${restaurant_id}`, { new_category: newCategory }) // NB! apiServices.post uses async-await. Normally you would never mix '.then' (used below) and 'async' + 'await' (used in apiServices.post), but I don't feel like rewriting the whole thing below again c: AND! Apparently this works, which is awesome. I asked the almighty ChatGPT if it's ok to mix the two and the answer was yes - and indeed it works. In both cases we're working with Promises after all. A Promise is a Promise!
                     if (data.status === 'ok') { // I passed 'status:ok' as JSON from app.py c:
                         const successMessage = document.createElement("p")
-                        successMessage.style.color = 'green';
-                        successMessage.textContent = `Category "${newCategory}" added to database. Refresh if you want to see the new addition above.`;
-                        form.appendChild(successMessage);
-                        form.new_category.value = ''; // Reset the input field
+                        successMessage.style.color = 'green'
+                        successMessage.textContent = `Category "${newCategory}" added to database. Refresh if you want to see the new addition above.`
+                        form.appendChild(successMessage)
+                        form.new_category.value = '' // Reset the input field
                     } else {
-                        alert('Error when trying to add a new category:: ' + data.message);
+                        alert('Error when trying to add a new category:: ' + data.message)
                     }
-                    return false; // Return false to stop submission
+                    return false // Return false to stop submission
                 }
             })
         })

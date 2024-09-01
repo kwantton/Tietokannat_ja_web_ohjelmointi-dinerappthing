@@ -20,7 +20,12 @@ const csrfToken = tempData.csrf_token
 tempData = await apiServices.getAll('/api/map-token')
 const mapToken = tempData.map_token
 
-let map
+// initialize the map. Why 'morjens'? Because at the end of the page, I'm exporting 'map'. This 'morjens' was for testing.
+let map = 'morjens'
+
+// lngLatJSON shall have all the longtitudes and latitudes: {restaurant_id : {lng, lat}}, and this will be exported for use in 'map.jinja'. Why const? Because it's properties (each key-value pair) can be set later even though it's a 'constant'. Effectively, 'const' here is saying, 'this variable should always remain a JSON'
+const lngLatJSON = {}
+
 async function initMap() {
   // since this function 'initMap' is async, I have to use "await" for all asynchronic operations like 'fetch'. If the function wasn't "asyc", you'd use 'fetch(address_here).then(blah blah).then(blah blah)' instead of 'const response = await fetch(address_here); const data = ...'. So there are two syntaxes to choose from - async + await, or .then
 
@@ -29,7 +34,7 @@ async function initMap() {
   
   // requests for the needed Google libraries. These are from the google Cloud instruction pages
   //@ts-ignore
-  const { Map } = await google.maps.importLibrary('maps')
+  const { Map } = await google.maps.importLibrary('maps') // don't take the {} out or you'll get "Map is not a constructor". Google shenanigans.
   const { AdvancedMarkerElement } = await google.maps.importLibrary('marker')
   const { PlacesService } = await google.maps.importLibrary('places')     // this is for getting exact locations, since based on only address (and google Geocoder API), many diners would get placed into the wrong end of a larger building, AND they would be placed on top of each other
 
@@ -37,7 +42,7 @@ async function initMap() {
   map = new Map(document.getElementById('map'), {     // NB! in 'map.jinja', there's a div element 'map' where this whole google Map object will be inserted!
     zoom: 15,
     center: kumpula_pos,
-    mapId: 'DEMO_MAP_ID',
+    mapId: 'DINER_MAP_1',
   })
 
   const json_of_locations = await apiServices.getAll('/api/restaurants-visible')    // accessing 'restaurants' (sql db table) directly here in 'index.js'. // this is the json with id:x, name:string, address:string that I made in app.py
@@ -90,6 +95,7 @@ async function initMap() {
               title: placeDetails.name,
               content: markerContainer
             }) 
+            lngLatJSON[restaurantID] = { lat : placeDetails.geometry.location.lat(), lng: placeDetails.geometry.location.lng() }
             // ^^ it's not possible to set an id normally for the AdvancedMarkerElement like for normal HTML elements.
 
             const openingHours = placeDetails.opening_hours?.weekday_text || []   // example: 'undefined || x' returns x (normal JS), so 'placeDetails... || []' will return [] if the left side is undefined. This is to always get an array [] even if the left side is undefined. The ?. ('optional chaining' in JS) returns undefined if the property before .? is undefined AND cuts the code there, not even trying to handle the stuff on the right side to the ? (i.e. not causing an error), as long as placeDetails itself exists (it always does). This is to prevent the error 'cannot read properties of undefined' in case .opening_hours doesn't exist, as not all places have listed opening hours.
@@ -154,7 +160,7 @@ async function initMap() {
                     createStarRatingListener(restaurantID)                          // creates a onClick listener for each rating section star, coloring them orange if rated, removing color if rating is lower, etc. 
                     createFeedbackSendingListener(restaurantID, location, csrfToken)
                     .then(/* placeholder */)                                        // this function 'createFeedbackSendingListener' is asynchronous, but I'm not inside an 'async' function, so I can't use 'await' here -> '.then' is needed instead IF I do something after this function. A reminder - I'm currently not doing anything after the function, but in case I will be, I'm leaving 'then()' as a reminder
-                  },0)                                                              // yes, THIS '0' ms timeout does work! It enforces that this code block waits for the 'infowindow.open' above (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this timeOut: ChatGPT. With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended.
+                  },0)                                                              // yes, this '0' ms timeout is needed! It enforces that this code block waits for the 'infowindow.open' above (i.e. rendering of the infoWindow) first. I tried taking the setTimeout away, and it immediately breaks the star rating system! c: How I even came up with this timeOut: ChatGPT. With JS, ChatGPT often teaches you things you weren't even aware of. Highly recommended if you get stuck.
                 }
               }
             })
@@ -169,4 +175,6 @@ async function initMap() {
   })                      // 'json_of_locations.forEach' ends here!
 }
 
-initMap()
+await initMap()           // initMap() is 'async', so it returns a promise; we need to resolve that promise (=> in effect, do ALL the stuff inside initMap()) before exporting 'map' and 'lngLatJSON' because initMap() modifies the variables 'map' and 'lngLatJSON' which I'm exporting below. If you don't await for initMap(), the the below exported 'map' will have value 'morjens' instead of the actual map that I want to export because 'map' was initialized as 'morjens' at the top of this 'index.js' (let map = 'morjens' was done at ~row 24)
+export default { map, lngLatJSON };
+// solution #2 would be; export initMap() without awaiting first, then in the receiving side ('map.jinja') resolve it THERE instead c: (so, exporting a Promise instead of the resolved product)

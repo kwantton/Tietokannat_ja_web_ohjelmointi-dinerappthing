@@ -38,7 +38,7 @@ const commentHTML = (restaurantID, filtered_ratings_for_restaurant, filtered_com
                     return `
                     <li>
                         <p>
-                        ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''}                           <!-- safeHTML escapes '<> etc -->
+                        ${item.comment_visible ? `"${safeHTML(item.comment)}"<br>`: ''}                           <!-- safeHTML escapes '<>&" etc. The risk is about HTML, not about JS; JS-wise, it doesn't matter what the content inside is; even if there are backticks, it won't close the preceding one; it's just interpreted as a string in JS. -->
                         ${item.rating_visible ? `${item.rating}/5 <br>` : ''}
                         (by username "${safeHTML(item.username)}", ${item.created_at.match(/\d+ \w{3} \d{4}/g)})  <!--making this pretty instead of the default version-->
                         </p>
